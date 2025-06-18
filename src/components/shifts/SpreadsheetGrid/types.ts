@@ -1,3 +1,5 @@
+import { StaffMember } from '@/types/staff';
+
 export interface StaffMember {
   id: string; 
   name: string; 
@@ -9,6 +11,7 @@ export interface StaffMember {
   role?: string;
   company?: string; // 所属会社フィールド
   submissionStatus?: SubmissionStatus; // 提出状態（スタッフ別の状態管理用）
+  isActive?: boolean; // 追加
 }
 
 // 提出状態の定義
