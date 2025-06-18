@@ -20,7 +20,8 @@ import {
 import { FileDownload } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { StaffMember, Shift, StaffRequest } from '@/components/shifts/SpreadsheetGrid/types';
+import { Shift, StaffRequest } from '@/components/shifts/SpreadsheetGrid/types';
+import { StaffMember } from '@/types/staff';
 
 interface ExcelExportProps {
   staffMembers: StaffMember[];
