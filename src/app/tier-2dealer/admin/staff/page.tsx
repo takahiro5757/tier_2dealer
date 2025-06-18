@@ -344,10 +344,6 @@ export default function AdminStaffPage() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             スタッフ管理（管理者）
           </Typography>
-          <Button color="inherit" onClick={() => router.push('/tier-2dealer/admin/shifts')}>
-            <CalendarToday sx={{ mr: 1 }} />
-            シフト管理
-          </Button>
           <Box sx={{ position: 'relative', zIndex: 1201, display: 'flex', alignItems: 'center' }}>
             <NotificationSystem
               notifications={notifications}
@@ -358,6 +354,10 @@ export default function AdminStaffPage() {
               isAdminMode={true}
             />
           </Box>
+          <Button color="inherit" onClick={() => router.push('/tier-2dealer/admin/shifts')}>
+            <CalendarToday sx={{ mr: 1 }} />
+            シフト管理
+          </Button>
           <Button color="inherit" onClick={handleLogout}>
             <Logout sx={{ mr: 1 }} />
             ログアウト

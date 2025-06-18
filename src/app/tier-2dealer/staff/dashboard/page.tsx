@@ -464,7 +464,7 @@ export default function StaffDashboardPage() {
       <StaffHeader 
         userName={currentUser?.name}
         userRole="スタッフ"
-        title="スタッフダッシュボード"
+        title="シフトホーム"
         currentPage="dashboard"
         onLogout={handleLogout}
       />
