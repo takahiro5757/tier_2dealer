@@ -205,7 +205,7 @@ export const initialStaffMembers: StaffMember[] = [
     email: 'matsumoto.kenji@example.com',
     password: 'password008',
     businessTripNG: 'NG',
-    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'draft', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'submitted', '2025-12': 'draft' },
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'submitted', '2025-12': 'draft' },
     isActive: true
   },
   {
@@ -365,7 +365,7 @@ export const initialStaffMembers: StaffMember[] = [
     email: 'miura.takuya@example.com',
     password: 'password018',
     businessTripNG: 'OK',
-    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'draft', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'draft', '2025-12': 'submitted' },
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'draft', '2025-12': 'submitted' },
     isActive: true
   },
   {
@@ -400,10 +400,4 @@ export const initialStaffMembers: StaffMember[] = [
     submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'draft', '2025-12': 'submitted' },
     isActive: true
   }
-].map(staff => ({
-  ...staff,
-  submissionHistory: {
-    ...staff.submissionHistory,
-    '2025-06': 'submitted'
-  }
-})); 
+]; 
