@@ -13,7 +13,8 @@ import { getWeeks, generateDummySummary } from '../../../../utils/dateUtils';
 import { useRouter } from 'next/navigation';
 import { Send, Person, Logout, CalendarToday } from '@mui/icons-material';
 
-import { ShiftSubmission, SubmissionStatus, SyncStatus, StaffMember } from '../../../../components/shifts/SpreadsheetGrid/types';
+import { ShiftSubmission, SubmissionStatus, SyncStatus } from '../../../../components/shifts/SpreadsheetGrid/types';
+import { StaffMember } from '@/types/staff';
 import { useShiftStore, staffMembers } from '../../../../stores/shiftStore';
 import NotificationSystem from '../../../../components/NotificationSystem';
 import ExcelExport from '../../../../components/ExcelExport';
@@ -354,6 +355,22 @@ const mockNotifications = [
   }
 ];
 
+const STAFF_STORAGE_KEY = 'staff_members';
+
+type StaffMemberWithStatus = StaffMember & { submissionStatus: SubmissionStatus };
+
+function getActiveStaffMembersWithStatus(year: string, month: string) {
+  const stored = typeof window !== 'undefined' ? localStorage.getItem(STAFF_STORAGE_KEY) : null;
+  const base = stored ? JSON.parse(stored) : dummyStaffMembers;
+  const ymKey = `${year}-${month.toString().padStart(2, '0')}`;
+  return base
+    .filter((s: any) => s.isActive)
+    .map((s: any) => ({
+      ...s,
+      submissionStatus: s.submissionHistory?.[ymKey] || 'draft'
+    }));
+}
+
 export default function AdminShiftsPage() {
   const router = useRouter();
   const [submitDialog, setSubmitDialog] = useState(false);
@@ -392,23 +409,11 @@ export default function AdminShiftsPage() {
   const [currentMonth, setCurrentMonth] = useState('6');
   
   // 2025年6月は全員提出済みにする
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>(() => {
-    const ymKey = `${'2025'}-${'6'.toString().padStart(2, '0')}`;
-    return dummyStaffMembers.map(s => ({
-      ...s,
-      submissionStatus: s.submissionHistory?.[ymKey] || 'draft'
-    }));
-  });
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>(() => getActiveStaffMembersWithStatus('2025', '6'));
   
   // 年月変更時にstaffMembersのsubmissionStatusを再計算
   useEffect(() => {
-    const ymKey = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
-    setStaffMembers(
-      dummyStaffMembers.map(s => ({
-        ...s,
-        submissionStatus: s.submissionHistory?.[ymKey] || 'draft'
-      }))
-    );
+    setStaffMembers(getActiveStaffMembersWithStatus(currentYear, currentMonth));
   }, [currentYear, currentMonth]);
   
   console.log(`[AdminShifts] 初期状態: currentYear=${currentYear}, currentMonth=${currentMonth}`);
@@ -417,6 +422,8 @@ export default function AdminShiftsPage() {
   const [notifications, setNotifications] = useState(mockNotifications);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [isDataInitialized, setIsDataInitialized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
 
   // 即座にダミーデータを初期化（2025年6月の場合）
   useEffect(() => {
@@ -599,9 +606,10 @@ export default function AdminShiftsPage() {
         draft: []
       };
     }
+    const staffWithStatus = staffMembers as StaffMemberWithStatus[];
     const stats = {
-      submitted: staffMembers.filter((s: StaffMember) => s.submissionStatus === 'submitted'),
-      draft: staffMembers.filter((s: StaffMember) => (s.submissionStatus || 'draft') === 'draft')
+      submitted: staffWithStatus.filter((s) => s.submissionStatus === 'submitted'),
+      draft: staffWithStatus.filter((s) => (s.submissionStatus || 'draft') === 'draft')
     };
     return stats;
   }, [staffMembers]);
@@ -682,7 +690,7 @@ export default function AdminShiftsPage() {
     setDetailDialog({
       open: true,
       status,
-      staffList: submissionStats[status as keyof typeof submissionStats]
+      staffList: (submissionStats[status as keyof typeof submissionStats] as StaffMemberWithStatus[]).filter((s) => s.isActive)
     });
   };
 
@@ -821,7 +829,7 @@ export default function AdminShiftsPage() {
                 >
                   <CardContent sx={{ textAlign: 'center', p: 0.5, '&:last-child': { pb: 0.5 } }}>
                     <Typography variant="h6" color="success.main" sx={{ fontWeight: 'bold', fontSize: '1rem', lineHeight: 1 }}>
-                      {submissionStats.submitted.length}
+                      {isMounted ? submissionStats.submitted.length : '-'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
                       提出済み
@@ -840,7 +848,7 @@ export default function AdminShiftsPage() {
                 >
                   <CardContent sx={{ textAlign: 'center', p: 0.5, '&:last-child': { pb: 0.5 } }}>
                     <Typography variant="h6" color="warning.main" sx={{ fontWeight: 'bold', fontSize: '1rem', lineHeight: 1 }}>
-                      {submissionStats.draft.length}
+                      {isMounted ? submissionStats.draft.length : '-'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
                       未提出
@@ -924,8 +932,8 @@ export default function AdminShiftsPage() {
         {/* シフト表 */}
         <Paper sx={{ mb: 3, width: '100%', overflow: 'hidden' }}>
           <SpreadsheetGrid
-            staffMembers={staffMembers || []}
-            shifts={shifts}
+            staffMembers={isMounted ? staffMembers : []}
+            shifts={isMounted ? shifts : []}
             year={year}
             month={month}
             hideCaseColumns={true}
@@ -998,12 +1006,12 @@ export default function AdminShiftsPage() {
           {detailDialog.status === 'submitted' && '提出済みスタッフ'}
           {detailDialog.status === 'draft' && '未提出スタッフ'}
           <Typography variant="subtitle2" color="text.secondary">
-            {detailDialog.staffList.length}名
+            {isMounted ? detailDialog.staffList.length : '-'}名
           </Typography>
         </DialogTitle>
         <DialogContent>
           <Stack spacing={1}>
-            {detailDialog.staffList.map((staff: StaffMember) => (
+            {isMounted && (detailDialog.staffList as StaffMemberWithStatus[]).map((staff) => (
               <Box
                 key={staff.id}
                 sx={{
