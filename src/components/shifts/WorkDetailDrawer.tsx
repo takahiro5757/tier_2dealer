@@ -37,7 +37,7 @@ import {
   ExpandLess,
   Chat
 } from '@mui/icons-material';
-// import CommunicationPanel from '../sales/CommunicationPanel';
+import CommunicationPanel from '../sales/CommunicationPanel';
 
 // 型定義
 interface Communication {
@@ -793,14 +793,14 @@ const WorkDetailDrawer: React.FC<WorkDetailDrawerProps> = ({
 
           {/* コミュニケーション機能 */}
           <Box sx={{ mt: 3 }}>
-            {/* <CommunicationPanel
+            <CommunicationPanel
               communications={workDetails.communications}
               onSendMessage={handleSendMessage}
               onSendReply={handleSendReply}
               onLikeMessage={handleLikeMessage}
               onDeleteMessage={handleDeleteMessage}
               onEditMessage={handleEditMessage}
-            /> */}
+            />
           </Box>
         </Box>
       </Box>
