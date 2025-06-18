@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useState, useContext, useCallback } from 'react';
-import { Shift, StaffMember } from '../types';
+import { Shift } from '../types';
+import { StaffMember } from '@/types/staff';
 
 // 変更履歴の型定義を追加
 interface StatusHistoryEntry {
