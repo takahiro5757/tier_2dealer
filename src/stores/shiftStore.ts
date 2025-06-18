@@ -1,5 +1,18 @@
 import { create } from 'zustand';
-import { Shift, StaffRequest, StaffMember } from '@/components/shifts/SpreadsheetGrid/types';
+import { Shift, StaffRequest } from '@/components/shifts/SpreadsheetGrid/types';
+
+// shiftStore専用のStaffMember型（軽量版）
+interface StaffMember {
+  id: string;
+  name: string;
+  nameKana: string;
+  station: string;
+  weekdayRate: number;
+  holidayRate: number;
+  tel: string;
+  role: string;
+  company: string;
+}
 
 // 通知の型定義
 export interface Notification {

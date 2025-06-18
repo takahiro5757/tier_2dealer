@@ -7,7 +7,8 @@ import {
   TableContainer, Paper, TextField, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Chip
 } from '@mui/material';
 import { ShiftProvider, useShiftContext } from './context/ShiftContext';
-import { DateInfo, StaffRequest, StaffMember, Shift } from './types';
+import { DateInfo, StaffRequest, Shift } from './types';
+import { StaffMember } from '@/types/staff';
 import DateRow from './components/DateRow';
 import CommentDialog from './components/CommentDialog';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
