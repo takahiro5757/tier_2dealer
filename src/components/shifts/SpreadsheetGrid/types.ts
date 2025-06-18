@@ -1,19 +1,5 @@
 import { StaffMember } from '@/types/staff';
 
-export interface StaffMember {
-  id: string; 
-  name: string; 
-  nameKana: string; 
-  station: string;
-  weekdayRate: number; 
-  holidayRate: number; 
-  tel: string; 
-  role?: string;
-  company?: string; // 所属会社フィールド
-  submissionStatus?: SubmissionStatus; // 提出状態（スタッフ別の状態管理用）
-  isActive?: boolean; // 追加
-}
-
 // 提出状態の定義
 export type SubmissionStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'pending_approval';
 
