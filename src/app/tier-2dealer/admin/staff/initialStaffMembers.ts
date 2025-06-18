@@ -13,6 +13,7 @@ export interface StaffMember {
   password: string;
   businessTripNG: 'OK' | 'NG';
   submissionHistory: Record<string, 'submitted' | 'draft'>;
+  isActive: boolean;
 }
 
 export const initialStaffMembers: StaffMember[] = [
@@ -42,7 +43,8 @@ export const initialStaffMembers: StaffMember[] = [
       '2025-10': 'submitted',
       '2025-11': 'submitted',
       '2025-12': 'submitted'
-    }
+    },
+    isActive: true
   },
   {
     id: 'staff002',
@@ -70,7 +72,8 @@ export const initialStaffMembers: StaffMember[] = [
       '2025-10': 'submitted',
       '2025-11': 'submitted',
       '2025-12': 'submitted'
-    }
+    },
+    isActive: true
   },
   {
     id: 'staff003',
@@ -98,7 +101,8 @@ export const initialStaffMembers: StaffMember[] = [
       '2025-10': 'submitted',
       '2025-11': 'submitted',
       '2025-12': 'submitted'
-    }
+    },
+    isActive: true
   },
   {
     id: 'staff004',
@@ -119,14 +123,15 @@ export const initialStaffMembers: StaffMember[] = [
       '2025-03': 'submitted',
       '2025-04': 'submitted',
       '2025-05': 'submitted',
-      '2025-06': 'draft',
+      '2025-06': 'submitted',
       '2025-07': 'submitted',
       '2025-08': 'submitted',
       '2025-09': 'submitted',
       '2025-10': 'draft',
       '2025-11': 'submitted',
       '2025-12': 'submitted'
-    }
+    },
+    isActive: true
   },
   {
     id: 'staff005',
@@ -154,7 +159,8 @@ export const initialStaffMembers: StaffMember[] = [
       '2025-10': 'submitted',
       '2025-11': 'draft',
       '2025-12': 'submitted'
-    }
+    },
+    isActive: true
   },
   {
     id: 'staff006',
@@ -182,6 +188,237 @@ export const initialStaffMembers: StaffMember[] = [
       '2025-10': 'submitted',
       '2025-11': 'submitted',
       '2025-12': 'draft'
-    }
+    },
+    isActive: true
+  },
+  {
+    id: 'staff007',
+    name: '小林優子',
+    nameKana: 'コバヤシユウコ',
+    station: '大宮駅',
+    weekdayRate: 15000,
+    holidayRate: 18000,
+    tel: '090-7777-7777',
+    role: 'ガール',
+    company: '株式会社Festal',
+    email: 'kobayashi.yuko@example.com',
+    password: 'password007',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'draft', '2025-02': 'submitted', '2025-03': 'draft', '2025-04': 'submitted', '2025-05': 'draft', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'draft', '2025-09': 'submitted', '2025-10': 'submitted', '2025-11': 'draft', '2025-12': 'submitted' },
+    isActive: true
+  },
+  {
+    id: 'staff008',
+    name: '松本健司',
+    nameKana: 'マツモトケンジ',
+    station: '赤羽駅',
+    weekdayRate: 15500,
+    holidayRate: 18500,
+    tel: '090-8888-8888',
+    role: 'クローザー',
+    company: '株式会社Festal',
+    email: 'matsumoto.kenji@example.com',
+    password: 'password008',
+    businessTripNG: 'NG',
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'draft', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'submitted', '2025-12': 'draft' },
+    isActive: true
+  },
+  {
+    id: 'staff009',
+    name: '伊藤美穂',
+    nameKana: 'イトウミホ',
+    station: '川口駅',
+    weekdayRate: 14800,
+    holidayRate: 17800,
+    tel: '090-9999-9999',
+    role: 'ガール',
+    company: '株式会社Festal',
+    email: 'ito.miho@example.com',
+    password: 'password009',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'draft', '2025-02': 'submitted', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'draft', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'submitted', '2025-12': 'submitted' },
+    isActive: true
+  },
+  {
+    id: 'staff010',
+    name: '加藤大輔',
+    nameKana: 'カトウダイスケ',
+    station: '北千住駅',
+    weekdayRate: 15300,
+    holidayRate: 18300,
+    tel: '090-1010-1010',
+    role: 'クローザー',
+    company: '株式会社Festal',
+    email: 'kato.daisuke@example.com',
+    password: 'password010',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'submitted', '2025-05': 'draft', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'submitted', '2025-10': 'draft', '2025-11': 'submitted', '2025-12': 'draft' },
+    isActive: true
+  },
+  {
+    id: 'staff011',
+    name: '斎藤理恵',
+    nameKana: 'サイトウリエ',
+    station: '船橋駅',
+    weekdayRate: 15100,
+    holidayRate: 18100,
+    tel: '090-1112-1112',
+    role: 'ガール',
+    company: '株式会社Festal',
+    email: 'saito.rie@example.com',
+    password: 'password011',
+    businessTripNG: 'NG',
+    submissionHistory: { '2025-01': 'draft', '2025-02': 'submitted', '2025-03': 'draft', '2025-04': 'submitted', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'draft', '2025-09': 'submitted', '2025-10': 'submitted', '2025-11': 'draft', '2025-12': 'submitted' },
+    isActive: true
+  },
+  {
+    id: 'staff012',
+    name: '森本翔太',
+    nameKana: 'モリモトショウタ',
+    station: '柏駅',
+    weekdayRate: 14900,
+    holidayRate: 17900,
+    tel: '090-1212-1212',
+    role: 'クローザー',
+    company: '株式会社Festal',
+    email: 'morimoto.shota@example.com',
+    password: 'password012',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'draft', '2025-08': 'submitted', '2025-09': 'submitted', '2025-10': 'draft', '2025-11': 'submitted', '2025-12': 'submitted' },
+    isActive: true
+  },
+  {
+    id: 'staff013',
+    name: '石田真由美',
+    nameKana: 'イシダマユミ',
+    station: '横浜駅',
+    weekdayRate: 15000,
+    holidayRate: 18000,
+    tel: '090-1313-1313',
+    role: 'ガール',
+    company: '株式会社Festal',
+    email: 'ishida.mayumi@example.com',
+    password: 'password013',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'draft', '2025-02': 'submitted', '2025-03': 'draft', '2025-04': 'submitted', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'draft', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'submitted', '2025-12': 'draft' },
+    isActive: true
+  },
+  {
+    id: 'staff014',
+    name: '山本一郎',
+    nameKana: 'ヤマモトイチロウ',
+    station: '品川駅',
+    weekdayRate: 15200,
+    holidayRate: 18200,
+    tel: '090-1414-1414',
+    role: 'クローザー',
+    company: '株式会社Festal',
+    email: 'yamamoto.ichiro@example.com',
+    password: 'password014',
+    businessTripNG: 'NG',
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'draft', '2025-12': 'submitted' },
+    isActive: true
+  },
+  {
+    id: 'staff015',
+    name: '藤田彩',
+    nameKana: 'フジタアヤ',
+    station: '新橋駅',
+    weekdayRate: 14700,
+    holidayRate: 17700,
+    tel: '090-1515-1515',
+    role: 'ガール',
+    company: '株式会社Festal',
+    email: 'fujita.aya@example.com',
+    password: 'password015',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'draft', '2025-02': 'submitted', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'draft', '2025-08': 'submitted', '2025-09': 'submitted', '2025-10': 'draft', '2025-11': 'submitted', '2025-12': 'draft' },
+    isActive: true
+  },
+  {
+    id: 'staff016',
+    name: '大野剛',
+    nameKana: 'オオノツヨシ',
+    station: '上野駅',
+    weekdayRate: 15400,
+    holidayRate: 18400,
+    tel: '090-1616-1616',
+    role: 'クローザー',
+    company: '株式会社Festal',
+    email: 'ono.tsuyoshi@example.com',
+    password: 'password016',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'submitted', '2025-05': 'draft', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'submitted', '2025-10': 'draft', '2025-11': 'submitted', '2025-12': 'submitted' },
+    isActive: true
+  },
+  {
+    id: 'staff017',
+    name: '村上真理',
+    nameKana: 'ムラカミマリ',
+    station: '池袋駅',
+    weekdayRate: 15000,
+    holidayRate: 18000,
+    tel: '090-1717-1717',
+    role: 'ガール',
+    company: '株式会社Festal',
+    email: 'murakami.mari@example.com',
+    password: 'password017',
+    businessTripNG: 'NG',
+    submissionHistory: { '2025-01': 'draft', '2025-02': 'submitted', '2025-03': 'draft', '2025-04': 'submitted', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'draft', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'submitted', '2025-12': 'draft' },
+    isActive: true
+  },
+  {
+    id: 'staff018',
+    name: '三浦拓也',
+    nameKana: 'ミウラタクヤ',
+    station: '新宿駅',
+    weekdayRate: 15300,
+    holidayRate: 18300,
+    tel: '090-1818-1818',
+    role: 'クローザー',
+    company: '株式会社Festal',
+    email: 'miura.takuya@example.com',
+    password: 'password018',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'draft', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'draft', '2025-12': 'submitted' },
+    isActive: true
+  },
+  {
+    id: 'staff019',
+    name: '青木美咲',
+    nameKana: 'アオキミサキ',
+    station: '渋谷駅',
+    weekdayRate: 14900,
+    holidayRate: 17900,
+    tel: '090-1919-1919',
+    role: 'ガール',
+    company: '株式会社Festal',
+    email: 'aoki.misaki@example.com',
+    password: 'password019',
+    businessTripNG: 'OK',
+    submissionHistory: { '2025-01': 'draft', '2025-02': 'submitted', '2025-03': 'draft', '2025-04': 'submitted', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'draft', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'submitted', '2025-12': 'draft' },
+    isActive: true
+  },
+  {
+    id: 'staff020',
+    name: '竹内亮',
+    nameKana: 'タケウチリョウ',
+    station: '大井町駅',
+    weekdayRate: 15200,
+    holidayRate: 18200,
+    tel: '090-2020-2020',
+    role: 'クローザー',
+    company: '株式会社Festal',
+    email: 'takeuchi.ryo@example.com',
+    password: 'password020',
+    businessTripNG: 'NG',
+    submissionHistory: { '2025-01': 'submitted', '2025-02': 'draft', '2025-03': 'submitted', '2025-04': 'draft', '2025-05': 'submitted', '2025-06': 'submitted', '2025-07': 'submitted', '2025-08': 'submitted', '2025-09': 'draft', '2025-10': 'submitted', '2025-11': 'draft', '2025-12': 'submitted' },
+    isActive: true
   }
-]; 
+].map(staff => ({
+  ...staff,
+  submissionHistory: {
+    ...staff.submissionHistory,
+    '2025-06': 'submitted'
+  }
+})); 
