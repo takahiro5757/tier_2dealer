@@ -12,7 +12,10 @@ import {
 import { useRouter } from 'next/navigation';
 import NotificationSystem from '../../../../components/NotificationSystem';
 import { useShiftStore } from '../../../../stores/shiftStore';
-import { initialStaffMembers, StaffMember } from './initialStaffMembers';
+import { initialStaffMembers } from './initialStaffMembers';
+import { StaffMember } from '@/types/staff';
+import Switch from '@mui/material/Switch';
+import Tooltip from '@mui/material/Tooltip';
 
 const SUBMISSION_STATUS: Record<string, { label: string; color: 'success' | 'warning' | 'error' | 'default' }> = {
   submitted: { label: '提出済み', color: 'success' },
@@ -44,6 +47,9 @@ const mockNotifications = [
   }
 ];
 
+// localStorageキー
+const STAFF_STORAGE_KEY = 'staff_members';
+
 export default function AdminStaffPage() {
   const router = useRouter();
   
@@ -59,22 +65,6 @@ export default function AdminStaffPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
-  const [editForm, setEditForm] = useState<StaffMember>({
-    id: '',
-    name: '',
-    nameKana: '',
-    station: '',
-    weekdayRate: 15000,
-    holidayRate: 18000,
-    tel: '',
-    role: 'クローザー',
-    company: '株式会社Festal',
-    email: '',
-    password: '',
-    businessTripNG: 'OK',
-    submissionHistory: {}
-  });
-  const [message, setMessage] = useState('');
 
   // フィルター状態
   const [filters, setFilters] = useState({
@@ -83,7 +73,8 @@ export default function AdminStaffPage() {
     station: '',
     role: '',
     status: '',
-    month: '2025-01' // デフォルトを最新月に設定
+    month: '2025-01', // デフォルトを最新月に設定
+    isActive: ''
   });
 
   // パスワード表示状態
@@ -120,6 +111,14 @@ export default function AdminStaffPage() {
     }
   }, [router]);
 
+  // 初期化時にlocalStorageから取得
+  useEffect(() => {
+    const stored = localStorage.getItem(STAFF_STORAGE_KEY);
+    if (stored) {
+      setStaffMembers(JSON.parse(stored));
+    }
+  }, []);
+
   // フィルター変更ハンドラー
   const handleFilterChange = (field: keyof typeof filters) => (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { value: unknown } }
@@ -139,14 +138,19 @@ export default function AdminStaffPage() {
       station: '',
       role: '',
       status: '',
-      month: '2025-01'
+      month: '2025-01',
+      isActive: ''
     });
   };
 
   // フィルター適用されたスタッフリスト（月フィルターは除外）
   const filteredStaffMembers = staffMembers.filter(staff => {
     const currentMonthStatus = staff.submissionHistory[filters.month] || 'draft';
+    const isActiveMatch = filters.isActive === undefined || filters.isActive === ''
+      ? true
+      : String(staff.isActive) === filters.isActive;
     return (
+      isActiveMatch &&
       staff.name.toLowerCase().includes(filters.name.toLowerCase()) &&
       staff.nameKana.toLowerCase().includes(filters.nameKana.toLowerCase()) &&
       staff.station.toLowerCase().includes(filters.station.toLowerCase()) &&
@@ -159,6 +163,26 @@ export default function AdminStaffPage() {
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  // editFormの初期値を共通化
+  const emptyStaffMember: StaffMember = {
+    id: '',
+    name: '',
+    nameKana: '',
+    station: '',
+    weekdayRate: 15000,
+    holidayRate: 18000,
+    tel: '',
+    role: 'クローザー',
+    company: '株式会社Festal',
+    email: '',
+    password: '',
+    businessTripNG: 'OK',
+    submissionHistory: {},
+    isActive: true
+  };
+  const [editForm, setEditForm] = useState<StaffMember>(emptyStaffMember);
+  const [message, setMessage] = useState('');
 
   // フォーム入力ハンドラー
   const handleFormChange = (field: keyof StaffMember) => (
@@ -185,19 +209,10 @@ export default function AdminStaffPage() {
   // スタッフ追加ダイアログを開く
   const handleAddOpen = () => {
     setEditForm({
+      ...emptyStaffMember,
       id: `staff${String(Date.now()).slice(-3)}`,
-      name: '',
-      nameKana: '',
-      station: '',
-      weekdayRate: 15000,
-      holidayRate: 18000,
-      tel: '',
-      role: 'クローザー',
-      company: '株式会社Festal',
-      email: '',
-      password: '',
-      businessTripNG: 'OK',
-      submissionHistory: { [filters.month]: 'draft' } // 現在の月でdraftとして初期化
+      submissionHistory: { [filters.month]: 'draft' },
+      isActive: true
     });
     setAddDialogOpen(true);
   };
@@ -226,7 +241,8 @@ export default function AdminStaffPage() {
       email: '',
       password: '',
       businessTripNG: 'OK',
-      submissionHistory: {}
+      submissionHistory: {},
+      isActive: true
     });
   };
 
@@ -284,7 +300,8 @@ export default function AdminStaffPage() {
       email: '',
       password: '',
       businessTripNG: 'OK',
-      submissionHistory: {}
+      submissionHistory: {},
+      isActive: true
     });
   };
 
@@ -298,6 +315,17 @@ export default function AdminStaffPage() {
         setMessage('');
       }, 3000);
     }
+  };
+
+  // スイッチ切り替え時にlocalStorageへ保存
+  const handleActiveToggle = (id: string) => {
+    setStaffMembers((prev) => {
+      const updated = prev.map((s) =>
+        s.id === id ? { ...s, isActive: !s.isActive } : s
+      );
+      localStorage.setItem(STAFF_STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (
@@ -405,6 +433,11 @@ export default function AdminStaffPage() {
                 </TableRow>
                 {/* 2行目：各項目のラベル */}
                 <TableRow sx={{ backgroundColor: '#f5f5f5', height: 48 }}>
+                  <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', verticalAlign: 'middle' }}>
+                    <Tooltip title="有効にするとシフト管理画面に表示されます。無効にすると非表示になります。" arrow>
+                      <span>有効</span>
+                    </Tooltip>
+                  </TableCell>
                   <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', verticalAlign: 'middle' }}>氏名</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', verticalAlign: 'middle' }}>カナ</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', verticalAlign: 'middle' }}>最寄駅</TableCell>
@@ -417,6 +450,21 @@ export default function AdminStaffPage() {
                 </TableRow>
                 {/* フィルター行 */}
                 <TableRow sx={{ backgroundColor: '#fafafa' }}>
+                  {/* 有効フィルター */}
+                  <TableCell sx={{ py: 1 }}>
+                    <FormControl size="small" sx={{ width: '100%' }}>
+                      <Select
+                        value={filters.isActive ?? ''}
+                        onChange={e => setFilters(prev => ({ ...prev, isActive: e.target.value }))}
+                        displayEmpty
+                      >
+                        <MenuItem value="">すべて</MenuItem>
+                        <MenuItem value="true">有効</MenuItem>
+                        <MenuItem value="false">無効</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </TableCell>
+                  {/* 氏名フィルター */}
                   <TableCell sx={{ py: 1 }}>
                     <TextField
                       size="small"
@@ -426,6 +474,7 @@ export default function AdminStaffPage() {
                       sx={{ width: '100%' }}
                     />
                   </TableCell>
+                  {/* カナフィルター */}
                   <TableCell sx={{ py: 1 }}>
                     <TextField
                       size="small"
@@ -435,6 +484,7 @@ export default function AdminStaffPage() {
                       sx={{ width: '100%' }}
                     />
                   </TableCell>
+                  {/* 最寄駅フィルター */}
                   <TableCell sx={{ py: 1 }}>
                     <TextField
                       size="small"
@@ -444,6 +494,7 @@ export default function AdminStaffPage() {
                       sx={{ width: '100%' }}
                     />
                   </TableCell>
+                  {/* 役職フィルター */}
                   <TableCell sx={{ py: 1 }}>
                     <FormControl size="small" sx={{ width: '100%' }}>
                       <Select
@@ -457,15 +508,11 @@ export default function AdminStaffPage() {
                       </Select>
                     </FormControl>
                   </TableCell>
-                  <TableCell sx={{ py: 1 }}>
-                    {/* 平日単価はフィルター対象外 */}
-                  </TableCell>
-                  <TableCell sx={{ py: 1 }}>
-                    {/* 土日単価はフィルター対象外 */}
-                  </TableCell>
-                  <TableCell sx={{ py: 1 }}>
-                    {/* 電話番号はフィルター対象外 */}
-                  </TableCell>
+                  {/* 平日単価・土日単価・電話番号はフィルターなし */}
+                  <TableCell sx={{ py: 1 }}></TableCell>
+                  <TableCell sx={{ py: 1 }}></TableCell>
+                  <TableCell sx={{ py: 1 }}></TableCell>
+                  {/* 提出状況フィルター */}
                   <TableCell sx={{ py: 1 }}>
                     <FormControl size="small" sx={{ width: '100%' }}>
                       <Select
@@ -479,6 +526,7 @@ export default function AdminStaffPage() {
                       </Select>
                     </FormControl>
                   </TableCell>
+                  {/* リセットボタン */}
                   <TableCell sx={{ py: 1, textAlign: 'center' }}>
                     <Button
                       size="small"
@@ -493,6 +541,14 @@ export default function AdminStaffPage() {
               <TableBody>
                 {filteredStaffMembers.map((staff) => (
                   <TableRow key={staff.id} hover>
+                    <TableCell>
+                      <Switch
+                        checked={staff.isActive}
+                        onChange={() => handleActiveToggle(staff.id)}
+                        color="primary"
+                        inputProps={{ 'aria-label': '有効/無効切り替え' }}
+                      />
+                    </TableCell>
                     <TableCell>{staff.name}</TableCell>
                     <TableCell>{staff.nameKana}</TableCell>
                     <TableCell>{staff.station}</TableCell>
