@@ -483,25 +483,26 @@ const DateRow: React.FC<DateRowProps> = ({
       {staffMembers.map(staff => {
         const shift = getShift(date, staff.id); 
         const status = getStatus(staff.id, date);
-        const hasConfirmedLocation = status === '○';
+        const hasConfirmedLocation = status === '○' && shift?.location;
         const isUnassigned = status === '○' && !shift?.location;
         const cellId = isUnassigned ? `loc-${date.getDate()}-${staff.id}` : '';
         const isHighlighted = cellId && cellId === highlightedCellId;
         
         return (
-          <React.Fragment key={`${date.toISOString()}-${staff.id}`}>
+          <React.Fragment key={`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${staff.id}`}>
             <StatusCell 
               staffId={staff.id}
               date={date}
               isWeekend={isWeekend}
               disableDoubleClick={disableDoubleClick}
+              isReadOnly={isReadOnly}
             />
             
             <RateCell 
               staffId={staff.id}
               date={date}
               hasConfirmedLocation={!!hasConfirmedLocation}
-              isReadOnly={isReadOnly}
+              isReadOnly={isReadOnly || !onRateChange}
             />
             
             <LocationCell 

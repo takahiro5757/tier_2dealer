@@ -34,6 +34,7 @@ interface StatusCellProps {
   date: Date;
   isWeekend: boolean;
   disableDoubleClick?: boolean; // ダブルクリック機能を無効にするオプション
+  isReadOnly?: boolean; // 読み取り専用モード
 }
 
 // 履歴表示用のカスタムツールチップ内容
@@ -110,7 +111,7 @@ const HistoryTooltipContent: React.FC<HistoryTooltipContentProps> = ({ history }
   );
 };
 
-const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disableDoubleClick }) => {
+const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disableDoubleClick, isReadOnly }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isHighlighted, setIsHighlighted] = useState<boolean>(false);
   const { 
@@ -148,12 +149,14 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
   
   // メニューを開く
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (isReadOnly) return; // 読み取り専用の場合は何もしない
     setAnchorEl(event.currentTarget);
   };
 
   // ダブルクリックでハイライト切り替え
   const handleDoubleClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
+    if (isReadOnly) return; // 読み取り専用の場合は何もしない
     if (status === '○' && !disableDoubleClick) {
       setIsHighlighted(!isHighlighted);
     }
@@ -224,8 +227,8 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
         onDoubleClick={disableDoubleClick ? undefined : handleDoubleClick}
         sx={{
           backgroundColor: getBackgroundColor(),
-          cursor: 'pointer',
-          '&:hover': { 
+          cursor: isReadOnly ? 'default' : 'pointer',
+          '&:hover': isReadOnly ? {} : { 
             backgroundColor: getHoverBackgroundColor(),
             textDecoration: 'underline'
           },

@@ -11,6 +11,7 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import NotificationSystem from '../../../../components/NotificationSystem';
+import AdminHeader from '../../../../components/AdminHeader';
 import { useShiftStore } from '../../../../stores/shiftStore';
 import { initialStaffMembers } from './initialStaffMembers';
 import { StaffMember } from '@/types/staff';
@@ -330,40 +331,8 @@ export default function AdminStaffPage() {
 
   return (
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      {/* ヘッダー */}
-      <AppBar position="static" sx={{ backgroundColor: '#1976d2' }}>
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            onClick={() => router.push('/tier-2dealer/admin/shifts')}
-            sx={{ mr: 1 }}
-          >
-            <ArrowBack />
-          </IconButton>
-          <Person sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            スタッフ管理（管理者）
-          </Typography>
-          <Box sx={{ position: 'relative', zIndex: 1201, display: 'flex', alignItems: 'center' }}>
-            <NotificationSystem
-              notifications={notifications}
-              onMarkAsRead={handleMarkAsRead}
-              onApproveChange={() => {}}
-              onRejectChange={() => {}}
-              onClearAll={handleClearAll}
-              isAdminMode={true}
-            />
-          </Box>
-          <Button color="inherit" onClick={() => router.push('/tier-2dealer/admin/shifts')}>
-            <CalendarToday sx={{ mr: 1 }} />
-            シフト管理
-          </Button>
-          <Button color="inherit" onClick={handleLogout}>
-            <Logout sx={{ mr: 1 }} />
-            ログアウト
-          </Button>
-        </Toolbar>
-      </AppBar>
+      {/* AdminHeader */}
+      <AdminHeader />
 
       <Container maxWidth={false} sx={{ py: 3, px: 2 }}>
         {message && (

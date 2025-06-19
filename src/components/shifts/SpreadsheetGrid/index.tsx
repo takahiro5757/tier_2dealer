@@ -15,6 +15,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import LocationCell from './components/LocationCell';
 import RequestCell from './components/RequestCell';
+import StatusCell from './components/StatusCell';
 
 /* ===== 定数 ===== */
 const H_HEADER = 32; const H_ROW = 36;
@@ -893,9 +894,11 @@ export interface SpreadsheetGridProps {
   month: number;
   staffMembers: StaffMember[];
   shifts: Shift[];
+  staffRequests?: StaffRequest[]; // 外部から要望データを渡すオプション
   onRateChange?: (staffId: string, date: string, newRate: number) => void;
   onStatusChange?: (staffId: string, date: string, newStatus: '○' | '×' | '-') => void;
   onRequestTextChange?: (staffId: string, text: string) => void;
+  onRequestChange?: (staffId: string, field: 'totalRequest' | 'weekendRequest', value: number) => void; // 要望数変更コールバック
   hideCaseColumns?: boolean;
   hideCommentRow?: boolean;
   isReadOnly?: boolean;
@@ -906,7 +909,7 @@ export interface SpreadsheetGridProps {
 }
 
 export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
-  year, month, staffMembers, shifts, onRateChange, onStatusChange, onRequestTextChange, hideCaseColumns = false, hideCommentRow = false, isReadOnly = false, showSyncStatus = false, onSubmitToAnsteype, disableDoubleClick = false, requestCellReadOnly
+  year, month, staffMembers, shifts, staffRequests: externalStaffRequests, onRateChange, onStatusChange, onRequestTextChange, onRequestChange, hideCaseColumns = false, hideCommentRow = false, isReadOnly = false, showSyncStatus = false, onSubmitToAnsteype, disableDoubleClick = false, requestCellReadOnly
 }) => {
   console.log(`[SpreadsheetGrid] コンポーネント初期化: year=${year}, month=${month}, staffMembers.length=${staffMembers.length}`);
   console.log(`[SpreadsheetGrid] 受け取ったshifts:`, shifts.length, shifts.slice(0, 5)); // 最初の5件をログ出力
@@ -1060,15 +1063,27 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
     });
   }, [year, month]);
   
-  const getShift = useCallback((d: Date, id: string) => 
-    shifts.find(s => 
-      s.date === d.toISOString().slice(0, 10) && 
+  const getShift = useCallback((d: Date, id: string) => {
+    // タイムゾーンの問題を避けるため、ローカル日付を使用
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    return shifts.find(s => 
+      s.date === dateStr && 
       s.staffId === id
-    ), [shifts]);
+    );
+  }, [shifts]);
   
   // 未確定シフト数と未確定シフト自体を取得
   const getUnassigned = useCallback((date: Date, role: string) => {
-    const dateStr = date.toISOString().slice(0, 10);
+    // タイムゾーンの問題を避けるため、ローカル日付を使用
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
     // 希望があり稼働場所が未確定のシフト
     const unassigned = shifts.filter(s => 
       s.date === dateStr && s.status === '○' && !s.location && 
@@ -1079,7 +1094,12 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
 
   // 未決数セルクリック時の処理 - 別のセルクリック時はリセット
   const handleUnassignedClick = useCallback((date: Date, role: string) => {
-    const dateStr = date.toISOString().slice(0, 10);
+    // タイムゾーンの問題を避けるため、ローカル日付を使用
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
     const unassigned = getUnassigned(date, role);
     if (unassigned.length === 0) return;
 
@@ -1162,13 +1182,21 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
     dates.reduce((sum, {date}) => sum + getUnassigned(date, 'ガール').length, 0),
   [dates, getUnassigned]);
 
-  // グローバルストアから要望データを取得
+  // 要望データの取得・設定
   useEffect(() => {
     console.log(`[SpreadsheetGrid] useEffect開始: year=${year}, month=${month}, staffMembers.length=${staffMembers.length}`);
-    console.log(`[SpreadsheetGrid] staffMembers内容:`, staffMembers.map(s => ({ id: s.id, name: s.name })));
+    console.log(`[SpreadsheetGrid] 外部要望データ:`, externalStaffRequests);
     
+    // 外部から要望データが渡されている場合はそれを優先
+    if (externalStaffRequests && externalStaffRequests.length > 0) {
+      console.log(`[SpreadsheetGrid] 外部要望データを使用:`, externalStaffRequests);
+      setStaffRequests(externalStaffRequests);
+      return;
+    }
+    
+    // 外部データがない場合は従来通りストアから取得
     if (typeof window !== 'undefined' && staffMembers.length > 0) {
-      console.log(`[SpreadsheetGrid] 要望データ取得開始`);
+      console.log(`[SpreadsheetGrid] ストアから要望データ取得開始`);
       
       // グローバルストアから要望データを取得
       const { useShiftStore } = require('@/stores/shiftStore');
@@ -1176,7 +1204,6 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       const existingRequests = store.getStaffRequests(year.toString(), month.toString());
       
       console.log(`[SpreadsheetGrid] ストアから取得した要望データ:`, existingRequests);
-      console.log(`[SpreadsheetGrid] ストア全体のstaffRequests:`, store.staffRequests);
       
       if (existingRequests && existingRequests.length > 0) {
         // ストアにデータがある場合はそれを使用
@@ -1227,10 +1254,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         store.updateStaffRequests(year.toString(), month.toString(), dummyRequests);
         console.log(`[SpreadsheetGrid] ダミーデータをストアに保存完了`);
       }
-    } else {
-      console.log(`[SpreadsheetGrid] 条件不足: window=${typeof window !== 'undefined'}, staffMembers.length=${staffMembers.length}`);
     }
-  }, [year, month, staffMembers]); // staffMembersを依存配列に追加
+  }, [year, month, staffMembers, externalStaffRequests]); // externalStaffRequestsを依存配列に追加
 
   // 稼働要望数の合計
   const totalCloserRequests = useMemo(() => {
@@ -1344,8 +1369,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         {lbl === '所属会社' ? 'ANSTEYPE社員' : ''}
       </CloserSectionTop>
       )}
-      {!hideCaseColumns && <CloseTopCollapsed top={top} />}
-      {!hideCaseColumns && <GirlTopCollapsed top={top} />}
+      {!hideCaseColumns && <CloseHeadCollapsed top={top} />}
+      {!hideCaseColumns && <GirlHeadCollapsed top={top} />}
       {orderedStaffMembers.map(m => (
         <Cell 
           key={m.id} 
@@ -1424,7 +1449,12 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
 
   // 稼働可能数を計算 - 各日付で「○」マークのステータスを持つスタッフの数
   const calculateAvailableCount = useCallback((date: Date, role: string) => {
-    const dateStr = date.toISOString().slice(0, 10);
+    // タイムゾーンの問題を完全に避けるため、確実なローカル日付を使用
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
     return shifts.filter(s => 
       s.date === dateStr && 
       s.status === '○' && 
@@ -1462,7 +1492,14 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   const handleStatusClick = (staffId: string, date: Date) => {
     if (isReadOnly) return; // 読み取り専用モードでは変更不可
     
-    const dateStr = date.toISOString().split('T')[0];
+    // タイムゾーンの問題を完全に避けるため、確実なローカル日付を使用
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    console.log(`[SpreadsheetGrid] handleStatusClick: originalDate=${date.toDateString()}, dateStr=${dateStr}`);
+    
     const currentShift = shifts.find(s => s.staffId === staffId && s.date === dateStr);
     let newStatus: '○' | '×' | '-';
 
@@ -1501,7 +1538,14 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   const handleRateChange = (staffId: string, date: Date, newRate: number) => {
     if (isReadOnly) return; // 読み取り専用モードでは変更不可
     
-    const dateStr = date.toISOString().split('T')[0];
+    // タイムゾーンの問題を完全に避けるため、確実なローカル日付を使用
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    console.log(`[SpreadsheetGrid] handleRateChange: originalDate=${date.toDateString()}, dateStr=${dateStr}`);
+    
     onRateChange?.(staffId, dateStr, newRate);
   };
 
@@ -1509,9 +1553,19 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   const handleRequestChange = (staffId: string, field: 'totalRequest' | 'weekendRequest', value: number) => {
     if (isReadOnly) return; // 読み取り専用モードでは変更不可
     
+    const clampedValue = Math.max(0, Math.min(30, value)); // 0-30の範囲で制限
+    
+    // 外部コールバックがある場合は、そちらを優先（一時データ管理）
+    if (onRequestChange) {
+      onRequestChange(staffId, field, clampedValue);
+      console.log(`[SpreadsheetGrid] 要望数更新（一時データ）: staffId=${staffId}, field=${field}, value=${clampedValue}`);
+      return;
+    }
+    
+    // 外部コールバックがない場合のみ、直接ストアを更新
     const updatedRequests = staffRequests.map(req => 
       req.id === staffId 
-        ? { ...req, [field]: Math.max(0, Math.min(30, value)) } // 0-30の範囲で制限
+        ? { ...req, [field]: clampedValue }
         : req
     );
     
@@ -1523,12 +1577,22 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       const store = useShiftStore.getState();
       store.updateStaffRequests(year.toString(), month.toString(), updatedRequests);
     }
+    
+    console.log(`[SpreadsheetGrid] 要望数更新（直接ストア）: staffId=${staffId}, field=${field}, value=${clampedValue}`);
   };
 
   // フリーテキスト要望変更ハンドラー
   const handleRequestTextChange = (staffId: string, text: string) => {
     if (isReadOnly) return; // 読み取り専用モードでは変更不可
     
+    // 外部コールバックがある場合は、そちらを優先（一時データ管理）
+    if (onRequestTextChange) {
+      onRequestTextChange(staffId, text);
+      console.log(`[SpreadsheetGrid] 要望テキスト更新（一時データ）: staffId=${staffId}, text=${text}`);
+      return;
+    }
+    
+    // 外部コールバックがない場合のみ、直接ストアを更新
     // まずローカル状態を更新
     const updatedRequests = staffRequests.map(req => 
       req.id === staffId 
@@ -1545,12 +1609,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       store.updateStaffRequests(year.toString(), month.toString(), updatedRequests);
     }
     
-    // 外部コールバックがあれば呼び出し（管理ページ用）
-    if (onRequestTextChange) {
-      onRequestTextChange(staffId, text);
-    }
-    
-    console.log(`[SpreadsheetGrid] 要望テキスト更新: staffId=${staffId}, text=${text}`);
+    console.log(`[SpreadsheetGrid] 要望テキスト更新（直接ストア）: staffId=${staffId}, text=${text}`);
   };
 
   // 前月引継関数は削除
@@ -1822,7 +1881,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
             {/* 日付行 */}
             {dates.map((dateInfo, index) => (
               <DateRow
-                key={dateInfo.date.toISOString()}
+                key={`${dateInfo.date.getFullYear()}-${String(dateInfo.date.getMonth() + 1).padStart(2, '0')}-${String(dateInfo.date.getDate()).padStart(2, '0')}`}
                 dateInfo={dateInfo}
                 staffMembers={orderedStaffMembers}
                 dateCloserCases={dateCloserCases[index] || 0}
@@ -1839,7 +1898,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                 hideCaseColumns={hideCaseColumns}
                 isReadOnly={isReadOnly}
                 onRateChange={onRateChange}
-                disableDoubleClick={disableDoubleClick}
+                disableDoubleClick={isReadOnly}
               />
             ))}
             

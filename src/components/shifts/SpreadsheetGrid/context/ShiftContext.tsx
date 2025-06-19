@@ -72,17 +72,26 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
   // 変更履歴の状態を追加
   const [statusHistory, setStatusHistory] = useState<{[key: string]: StatusHistoryEntry[]}>({});
 
+  // 日付をローカル日付文字列に変換するヘルパー関数
+  const getLocalDateString = useCallback((date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
   // シフト取得ヘルパー関数
   const getShift = useCallback((date: Date, staffId: string) => {
+    const dateStr = getLocalDateString(date);
     return shifts.find(s => 
-      s.date === date.toISOString().slice(0, 10) && 
+      s.date === dateStr && 
       s.staffId === staffId
     );
-  }, [shifts]);
+  }, [shifts, getLocalDateString]);
 
   // 希望の値を取得する - カスタム値を優先
   const getStatus = useCallback((staffId: string, date: Date): '○' | '×' | '-' => {
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     
     // カスタム希望があればそれを返す
@@ -93,15 +102,14 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
     // 元のシフトから取得
     const shift = getShift(date, staffId);
     return shift?.status || '-';
-  }, [customStatuses, getShift]);
+  }, [customStatuses, getShift, getLocalDateString]);
 
   // 対象日の単価を取得（カスタム単価があればそれを優先）
   const getRate = useCallback((staffId: string, date: Date, isWeekend: boolean): number => {
     const staff = staffMembers.find(s => s.id === staffId);
     if (!staff) return 0;
     
-    const dateStr = date.toISOString().slice(0, 10);
-    // const shift = getShift(date, staffId); // もう使わない
+    const dateStr = getLocalDateString(date);
     
     // カスタム単価が設定されていればそれを返す
     const customRateKey = `${staffId}-${dateStr}`;
@@ -111,32 +119,32 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
     
     // デフォルト単価を返す（曜日で判定）
     return isWeekend ? staff.holidayRate : staff.weekdayRate;
-  }, [staffMembers, customRates]);
+  }, [staffMembers, customRates, getLocalDateString]);
 
   // セルが変更されたかどうかを判定
   const isStatusChanged = useCallback((staffId: string, date: Date): boolean => {
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     return !!changedStatuses[key];
-  }, [changedStatuses]);
+  }, [changedStatuses, getLocalDateString]);
 
   // 稼働場所が鍵かかっているかどうかを判定
   const isLocationLocked = useCallback((staffId: string, date: Date): boolean => {
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     return !!lockedLocations[key];
-  }, [lockedLocations]);
+  }, [lockedLocations, getLocalDateString]);
 
   // 変更履歴取得関数
   const getStatusHistory = useCallback((staffId: string, date: Date): StatusHistoryEntry[] => {
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     return statusHistory[key] || [];
-  }, [statusHistory]);
+  }, [statusHistory, getLocalDateString]);
 
   // 希望更新
   const updateStatus = useCallback((staffId: string, date: Date, status: '○' | '×' | '-'): void => {
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     
     // 元の値を取得
@@ -147,6 +155,13 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
     // 変更がない場合は何もしない
     if (currentStatus === status) return;
     
+    // 外部コールバックがある場合は、そちらを優先（一時データ管理）
+    if (onStatusChange) {
+      onStatusChange(staffId, dateStr, status);
+      return;
+    }
+    
+    // 外部コールバックがない場合のみ、内部状態を更新
     // カスタム希望を保存
     setCustomStatuses(prev => ({
       ...prev,
@@ -183,18 +198,13 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
         [key]: [...keyHistory, historyEntry]
       };
     });
-    
-    // 親コンポーネントに通知
-    if (onStatusChange) {
-      onStatusChange(staffId, dateStr, status);
-    }
-  }, [shifts, onStatusChange, getStatus]);
+  }, [shifts, onStatusChange, getStatus, getLocalDateString]);
 
   // 単価更新
   const updateRate = useCallback((staffId: string, date: Date, rate: number): void => {
     if (rate <= 0) return;
     
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     
     // 内部状態を更新
@@ -207,22 +217,22 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
     if (onRateChange) {
       onRateChange(staffId, dateStr, rate);
     }
-  }, [onRateChange]);
+  }, [onRateChange, getLocalDateString]);
 
   // 鍵をトグル
   const toggleLocationLock = useCallback((staffId: string, date: Date): void => {
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     
     setLockedLocations(prev => ({
       ...prev,
       [key]: !prev[key]
     }));
-  }, []);
+  }, [getLocalDateString]);
 
   // コメント更新
   const updateComment = useCallback((staffId: string, date: Date, comment: string): void => {
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     
     if (comment.trim()) {
@@ -237,14 +247,14 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
         return newComments;
       });
     }
-  }, []);
+  }, [getLocalDateString]);
 
   // コメント取得
   const getComment = useCallback((staffId: string, date: Date): string => {
-    const dateStr = date.toISOString().slice(0, 10);
+    const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     return cellComments[key] || '';
-  }, [cellComments]);
+  }, [cellComments, getLocalDateString]);
 
   const value = {
     shifts,

@@ -26,10 +26,7 @@ const RequestCellContainer = styled(Box)(({ theme }) => ({
   overflow: 'hidden',
   cursor: 'pointer',
   flex: 'none !important',
-  boxSizing: 'border-box',
-  '&:hover': {
-    backgroundColor: '#f8e5fa',
-  }
+  boxSizing: 'border-box'
 }));
 
 const RequestText = styled(Typography)(({ theme }) => ({
@@ -197,7 +194,15 @@ const RequestCell: React.FC<RequestCellProps> = ({
   }, [isEditing, editText]);
 
   return (
-    <RequestCellContainer onClick={handleCellClick}>
+    <RequestCellContainer 
+      onClick={handleCellClick}
+      sx={{
+        cursor: isReadOnly ? 'default' : 'pointer',
+        '&:hover': isReadOnly ? {} : {
+          backgroundColor: '#f8e5fa',
+        }
+      }}
+    >
       {isEditing ? (
         <EditTextField
           ref={textFieldRef}

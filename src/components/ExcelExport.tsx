@@ -509,6 +509,7 @@ const ExcelExport: React.FC<ExcelExportProps> = ({
         startIcon={<FileDownload />}
         onClick={handleOpen}
         sx={{ ml: 2 }}
+        data-testid="excel-export-button"
       >
         Excelエクスポート
       </Button>
