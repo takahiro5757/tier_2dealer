@@ -1369,8 +1369,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         {lbl === '所属会社' ? 'ANSTEYPE社員' : ''}
       </CloserSectionTop>
       )}
-      {!hideCaseColumns && <CloseHeadCollapsed top={top} />}
-      {!hideCaseColumns && <GirlHeadCollapsed top={top} />}
+      {!hideCaseColumns && <CloseHeadCollapsed />}
+      {!hideCaseColumns && <GirlHeadCollapsed />}
       {orderedStaffMembers.map(m => (
         <Cell 
           key={m.id} 
