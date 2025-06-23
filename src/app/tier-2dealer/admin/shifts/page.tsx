@@ -13,7 +13,6 @@ import { getWeeks, generateDummySummary } from '../../../../utils/dateUtils';
 import { useRouter } from 'next/navigation';
 import { Send, Person, Logout, CalendarToday } from '@mui/icons-material';
 import { useShiftStore, staffMembers } from '../../../../stores/shiftStore';
-import NotificationSystem, { NotificationItem } from '../../../../components/NotificationSystem';
 import ExcelExport from '../../../../components/ExcelExport';
 import AdminHeader from '../../../../components/AdminHeader';
 import { initialStaffMembers } from '@/app/tier-2dealer/admin/staff/initialStaffMembers';
@@ -1427,11 +1426,7 @@ export default function AdminShiftsPage() {
   return (
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       {/* AdminHeader */}
-      <AdminHeader 
-        onExcelExport={handleExcelExportFromMenu}
-        onNotificationClick={handleNotificationClick}
-        notificationCount={unreadNotificationCount}
-      />
+      <AdminHeader onExcelExport={handleExcelExportFromMenu} />
 
       <Container maxWidth={false} sx={{ py: 3, px: 2 }}>
         {message && (
@@ -1853,19 +1848,6 @@ export default function AdminShiftsPage() {
           onGetStaffRequestsForMonth={getStaffRequestsForMonth}
         />
       </Box>
-
-      {/* 通知システム */}
-      <NotificationSystem
-        notifications={notifications}
-        onMarkAsRead={handleNotificationMarkAsRead}
-        onApproveChange={approveChangeRequest}
-        onRejectChange={rejectChangeRequest}
-        onClearAll={handleNotificationClearAll}
-        isAdminMode={true}
-        open={notificationDrawerOpen}
-        onClose={() => setNotificationDrawerOpen(false)}
-        hideIcon={true}
-      />
     </Box>
   );
 } 

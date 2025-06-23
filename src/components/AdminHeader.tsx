@@ -21,8 +21,6 @@ import { useState, useRef, useEffect } from 'react';
 
 interface AdminHeaderProps {
   onExcelExport?: () => void;
-  onNotificationClick?: () => void;
-  notificationCount?: number;
 }
 
 // 変更依頼履歴の型定義（管理ページと同じ）
@@ -66,7 +64,7 @@ const getChangeRequestsFromStorage = (): ChangeRequestHistory[] => {
   }
 };
 
-export default function AdminHeader({ onExcelExport, onNotificationClick, notificationCount = 0 }: AdminHeaderProps) {
+export default function AdminHeader({ onExcelExport }: AdminHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   
@@ -122,13 +120,6 @@ export default function AdminHeader({ onExcelExport, onNotificationClick, notifi
       onExcelExport();
     }
     handleSettingsMenuClose();
-  };
-
-  // 通知クリック処理
-  const handleNotificationClick = () => {
-    if (onNotificationClick) {
-      onNotificationClick();
-    }
   };
 
   // 履歴ダイアログの処理
@@ -227,21 +218,6 @@ export default function AdminHeader({ onExcelExport, onNotificationClick, notifi
               <Typography sx={{ fontSize: '0.9rem', color: 'white' }}>
                 管理者
               </Typography>
-              
-              {/* 通知アイコン */}
-              <IconButton
-                onClick={handleNotificationClick}
-                sx={{ color: 'white' }}
-                title="通知"
-              >
-                {notificationCount > 0 ? (
-                  <Badge badgeContent={notificationCount} color="error">
-                    <NotificationsIcon />
-                  </Badge>
-                ) : (
-                  <NotificationsIcon />
-                )}
-              </IconButton>
               
               {/* 履歴アイコン */}
               <IconButton
