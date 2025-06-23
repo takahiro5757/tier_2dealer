@@ -42,6 +42,7 @@ interface ChangeRequestHistory {
   status: 'pending' | 'approved' | 'rejected';
   totalChanges: number;
   reason?: string; // 変更理由
+  approverComment?: string; // 承認者コメント
 }
 
 // 旧型定義（後方互換性のため残す）
@@ -361,6 +362,12 @@ export default function AdminHeader({ onExcelExport }: AdminHeaderProps) {
                     sx={{ ml: 1 }}
                   />
                 </Typography>
+                {/* 承認済みの場合は承認者コメントを表示 */}
+                {selectedRequest.status === 'approved' && selectedRequest.approverComment && (
+                  <Typography sx={{ mt: 1, color: 'primary.main' }}>
+                    <strong>承認者コメント:</strong> {selectedRequest.approverComment}
+                  </Typography>
+                )}
               </Box>
 
               <Typography variant="h6" gutterBottom>

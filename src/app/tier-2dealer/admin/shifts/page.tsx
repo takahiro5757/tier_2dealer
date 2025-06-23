@@ -37,6 +37,7 @@ interface ChangeRequestHistory {
   status: 'pending' | 'approved' | 'rejected';
   totalChanges: number;
   reason?: string; // 変更理由
+  approverComment?: string; // 承認者コメント
 }
 
 // 2次店スタッフのダミーデータ（admin/staff/page.tsxと同期）
@@ -1423,6 +1424,157 @@ export default function AdminShiftsPage() {
   // 未読通知数を計算
   const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
 
+  // 変更依頼履歴のダミーデータを初期化時にlocalStorageへ保存
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const existing = localStorage.getItem(CHANGE_REQUEST_STORAGE_KEY);
+    if (!existing) {
+      const dummyChangeRequests: ChangeRequestHistory[] = [
+        {
+          id: 'cr-202506-001',
+          requestDate: '2025-06-10T10:00:00.000Z',
+          targetYear: 2025,
+          targetMonth: 6,
+          staffChanges: [
+            {
+              staffId: 'staff001',
+              staffName: '田中太郎',
+              changes: [
+                { date: '2025-06-12', field: 'status', oldValue: '○', newValue: '×' },
+                { date: '', field: 'requestText', oldValue: '平日希望', newValue: '夜勤希望' }
+              ]
+            },
+            {
+              staffId: 'staff002',
+              staffName: '佐藤花子',
+              changes: [
+                { date: '2025-06-15', field: 'status', oldValue: '×', newValue: '○' },
+                { date: '', field: 'requestText', oldValue: '週末のみ', newValue: '連勤可能' }
+              ]
+            }
+          ],
+          status: 'pending',
+          totalChanges: 4,
+          reason: '家庭の都合で出勤希望を変更'
+        },
+        {
+          id: 'cr-202506-002',
+          requestDate: '2025-06-12T15:00:00.000Z',
+          targetYear: 2025,
+          targetMonth: 6,
+          staffChanges: [
+            {
+              staffId: 'staff003',
+              staffName: '山田次郎',
+              changes: [
+                { date: '2025-06-18', field: 'status', oldValue: '○', newValue: '×' },
+                { date: '', field: 'requestText', oldValue: '夜勤希望', newValue: '短時間勤務希望' }
+              ]
+            },
+            {
+              staffId: 'staff004',
+              staffName: '鈴木美咲',
+              changes: [
+                { date: '2025-06-20', field: 'status', oldValue: '×', newValue: '○' },
+                { date: '', field: 'requestText', oldValue: '短時間勤務希望', newValue: '連勤可能' }
+              ]
+            }
+          ],
+          status: 'approved',
+          totalChanges: 4,
+          reason: 'スタッフの希望反映',
+          approverComment: '要望内容を確認し、全て承認しました。'
+        }
+      ];
+      localStorage.setItem(CHANGE_REQUEST_STORAGE_KEY, JSON.stringify(dummyChangeRequests));
+    }
+  }, []);
+
+  // 変更内容詳細の内容を事前にdetailContentとして定義
+  const changes = analyzeChanges();
+  const staffMap: Record<string, { staffName: string; shiftChanges: any[]; requestChanges: any[] }> = {};
+  changes.shiftChanges.forEach((sc) => {
+    staffMap[sc.staffId] = staffMap[sc.staffId] || { staffName: sc.staffName, shiftChanges: [], requestChanges: [] };
+    staffMap[sc.staffId].shiftChanges = sc.changes;
+  });
+  changes.requestChanges.forEach((rc) => {
+    staffMap[rc.staffId] = staffMap[rc.staffId] || { staffName: rc.staffName, shiftChanges: [], requestChanges: [] };
+    staffMap[rc.staffId].requestChanges = rc.changes;
+  });
+  const staffList = Object.entries(staffMap);
+  let detailContent: React.ReactNode;
+  if (staffList.length === 0) {
+    detailContent = (
+      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+        変更内容がありません
+      </Typography>
+    );
+  } else {
+    detailContent = staffList.map(([staffId, { staffName, shiftChanges, requestChanges }]) => (
+      <Box key={staffId} sx={{ mb: 3, ml: 2 }}>
+        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+          {staffName}
+        </Typography>
+        {/* シフト希望の変更 */}
+        {shiftChanges.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}>
+              シフト希望の変更
+            </Typography>
+            <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>日付</TableCell>
+                    <TableCell>変更前</TableCell>
+                    <TableCell>変更後</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {shiftChanges.map((change, changeIndex) => (
+                    <TableRow key={changeIndex}>
+                      <TableCell>{formatDateForDisplay(change.date)}</TableCell>
+                      <TableCell>{change.oldValue}</TableCell>
+                      <TableCell>{change.newValue}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        )}
+        {/* 要望の変更 */}
+        {requestChanges.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}>
+              要望の変更
+            </Typography>
+            <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>項目</TableCell>
+                    <TableCell>変更前</TableCell>
+                    <TableCell>変更後</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {requestChanges.map((change, changeIndex) => (
+                    <TableRow key={changeIndex}>
+                      <TableCell>{change.fieldLabel}</TableCell>
+                      <TableCell>{change.oldValue}</TableCell>
+                      <TableCell>{change.newValue}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        )}
+      </Box>
+    ));
+  }
+
   return (
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       {/* AdminHeader */}
@@ -1665,96 +1817,7 @@ export default function AdminShiftsPage() {
           </Box>
 
           {/* 変更内容詳細 */}
-          {(() => {
-            const changes = analyzeChanges();
-            return (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
-                  変更内容詳細
-                </Typography>
-                
-                {/* シフト変更 */}
-                {changes.shiftChanges.length > 0 && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}>
-                      シフト希望の変更
-                    </Typography>
-                    {changes.shiftChanges.map((staffChange, staffIndex) => (
-                      <Box key={staffChange.staffId} sx={{ mb: 2, ml: 2 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                          {staffChange.staffName}
-                        </Typography>
-                        <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>日付</TableCell>
-                                <TableCell>変更前</TableCell>
-                                <TableCell>変更後</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {staffChange.changes.map((change, changeIndex) => (
-                                <TableRow key={changeIndex}>
-                                  <TableCell>
-                                    {formatDateForDisplay(change.date)}
-                                  </TableCell>
-                                  <TableCell>{change.oldValue}</TableCell>
-                                  <TableCell>{change.newValue}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-
-                {/* 要望変更 */}
-                {changes.requestChanges.length > 0 && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}>
-                      要望の変更
-                    </Typography>
-                    {changes.requestChanges.map((staffChange, staffIndex) => (
-                      <Box key={staffChange.staffId} sx={{ mb: 2, ml: 2 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                          {staffChange.staffName}
-                        </Typography>
-                        <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell>項目</TableCell>
-                                <TableCell>変更前</TableCell>
-                                <TableCell>変更後</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {staffChange.changes.map((change, changeIndex) => (
-                                <TableRow key={changeIndex}>
-                                  <TableCell>{change.fieldLabel}</TableCell>
-                                  <TableCell>{change.oldValue}</TableCell>
-                                  <TableCell>{change.newValue}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-
-                {changes.totalChanges === 0 && (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                    変更内容がありません
-                  </Typography>
-                )}
-              </Box>
-            );
-          })()}
+          {detailContent}
 
           {/* 変更理由入力 */}
           <Box sx={{ mb: 3 }}>
