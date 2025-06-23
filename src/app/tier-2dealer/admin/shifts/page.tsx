@@ -1827,7 +1827,7 @@ export default function AdminShiftsPage() {
                   </Typography>
                 </Box>
                 <Chip
-                  label={staff.submissionStatus || 'draft'}
+                  label={staff.submissionStatus === 'submitted' ? '提出済み' : '未提出'}
                   color={
                     staff.submissionStatus === 'submitted' ? 'success' : 'warning'
                   }
