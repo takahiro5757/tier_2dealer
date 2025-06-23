@@ -13,7 +13,7 @@ import { getWeeks, generateDummySummary } from '../../../../utils/dateUtils';
 import { useRouter } from 'next/navigation';
 import { Send, Person, Logout, CalendarToday } from '@mui/icons-material';
 import { useShiftStore, staffMembers } from '../../../../stores/shiftStore';
-import NotificationSystem from '../../../../components/NotificationSystem';
+import NotificationSystem, { NotificationItem } from '../../../../components/NotificationSystem';
 import ExcelExport from '../../../../components/ExcelExport';
 import AdminHeader from '../../../../components/AdminHeader';
 import { initialStaffMembers } from '@/app/tier-2dealer/admin/staff/initialStaffMembers';
@@ -483,6 +483,7 @@ export default function AdminShiftsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [isDataInitialized, setIsDataInitialized] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -1407,10 +1408,30 @@ export default function AdminShiftsPage() {
     }
   };
 
+  // 通知関連のハンドラー
+  const handleNotificationClick = () => {
+    setNotificationDrawerOpen(true);
+  };
+
+  const handleNotificationMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleNotificationClearAll = () => {
+    setNotifications([]);
+  };
+
+  // 未読通知数を計算
+  const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
+
   return (
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       {/* AdminHeader */}
-      <AdminHeader onExcelExport={handleExcelExportFromMenu} />
+      <AdminHeader 
+        onExcelExport={handleExcelExportFromMenu}
+        onNotificationClick={handleNotificationClick}
+        notificationCount={unreadNotificationCount}
+      />
 
       <Container maxWidth={false} sx={{ py: 3, px: 2 }}>
         {message && (
@@ -1832,6 +1853,19 @@ export default function AdminShiftsPage() {
           onGetStaffRequestsForMonth={getStaffRequestsForMonth}
         />
       </Box>
+
+      {/* 通知システム */}
+      <NotificationSystem
+        notifications={notifications}
+        onMarkAsRead={handleNotificationMarkAsRead}
+        onApproveChange={approveChangeRequest}
+        onRejectChange={rejectChangeRequest}
+        onClearAll={handleNotificationClearAll}
+        isAdminMode={true}
+        open={notificationDrawerOpen}
+        onClose={() => setNotificationDrawerOpen(false)}
+        hideIcon={true}
+      />
     </Box>
   );
 } 

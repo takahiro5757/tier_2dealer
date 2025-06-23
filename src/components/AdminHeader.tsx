@@ -4,7 +4,7 @@ import {
   Box, AppBar, Toolbar, Button, Typography, Avatar, Menu, MenuItem, 
   IconButton, Divider, ListItemIcon, ListItemText, Dialog, DialogTitle, 
   DialogContent, DialogActions, Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, Chip, Paper
+  TableHead, TableRow, Chip, Paper, Badge
 } from '@mui/material';
 import { 
   Settings as SettingsIcon, 
@@ -13,13 +13,16 @@ import {
   Event as EventIcon,
   History as HistoryIcon,
   Group as GroupIcon,
-  Visibility
+  Visibility,
+  Notifications as NotificationsIcon
 } from '@mui/icons-material';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 
 interface AdminHeaderProps {
   onExcelExport?: () => void;
+  onNotificationClick?: () => void;
+  notificationCount?: number;
 }
 
 // 変更依頼履歴の型定義（管理ページと同じ）
@@ -63,7 +66,7 @@ const getChangeRequestsFromStorage = (): ChangeRequestHistory[] => {
   }
 };
 
-export default function AdminHeader({ onExcelExport }: AdminHeaderProps) {
+export default function AdminHeader({ onExcelExport, onNotificationClick, notificationCount = 0 }: AdminHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   
@@ -119,6 +122,13 @@ export default function AdminHeader({ onExcelExport }: AdminHeaderProps) {
       onExcelExport();
     }
     handleSettingsMenuClose();
+  };
+
+  // 通知クリック処理
+  const handleNotificationClick = () => {
+    if (onNotificationClick) {
+      onNotificationClick();
+    }
   };
 
   // 履歴ダイアログの処理
@@ -217,6 +227,21 @@ export default function AdminHeader({ onExcelExport }: AdminHeaderProps) {
               <Typography sx={{ fontSize: '0.9rem', color: 'white' }}>
                 管理者
               </Typography>
+              
+              {/* 通知アイコン */}
+              <IconButton
+                onClick={handleNotificationClick}
+                sx={{ color: 'white' }}
+                title="通知"
+              >
+                {notificationCount > 0 ? (
+                  <Badge badgeContent={notificationCount} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                ) : (
+                  <NotificationsIcon />
+                )}
+              </IconButton>
               
               {/* 履歴アイコン */}
               <IconButton

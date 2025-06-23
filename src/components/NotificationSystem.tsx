@@ -52,6 +52,9 @@ interface NotificationSystemProps {
   onRejectChange: (requestId: string, reason: string) => void;
   onClearAll: () => void;
   isAdminMode?: boolean;
+  open?: boolean;
+  onClose?: () => void;
+  hideIcon?: boolean;
 }
 
 export default function NotificationSystem({
@@ -60,9 +63,15 @@ export default function NotificationSystem({
   onApproveChange,
   onRejectChange,
   onClearAll,
-  isAdminMode = false
+  isAdminMode = false,
+  open,
+  onClose,
+  hideIcon = false
 }: NotificationSystemProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  
+  // 親コンポーネントからopenプロパティが渡された場合はそれを優先
+  const isDrawerOpen = open !== undefined ? open : drawerOpen;
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
   const [detailDialog, setDetailDialog] = useState(false);
   const [approvalDialog, setApprovalDialog] = useState(false);
@@ -218,24 +227,41 @@ export default function NotificationSystem({
   return (
     <>
       {/* 通知アイコンボタン */}
-      <IconButton
-        color="inherit"
-        onClick={() => setDrawerOpen(true)}
-        sx={{ position: 'relative' }}
-      >
-        <Badge 
-          badgeContent={unreadCount} 
-          color="primary"
+      {!hideIcon && (
+        <IconButton
+          color="inherit"
+          onClick={() => {
+            if (open !== undefined) {
+              // 親コンポーネントから制御される場合は何もしない
+              // 親コンポーネントのhandleNotificationClickが呼ばれるはず
+              return;
+            } else {
+              // 自分で制御する場合
+              setDrawerOpen(true);
+            }
+          }}
+          sx={{ position: 'relative' }}
         >
-          <Notifications />
-        </Badge>
-      </IconButton>
+          <Badge 
+            badgeContent={unreadCount} 
+            color="primary"
+          >
+            <Notifications />
+          </Badge>
+        </IconButton>
+      )}
 
       {/* 通知一覧ドロワー */}
       <Drawer
         anchor="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        open={isDrawerOpen}
+        onClose={() => {
+          if (onClose) {
+            onClose();
+          } else {
+            setDrawerOpen(false);
+          }
+        }}
         PaperProps={{ sx: { width: 400 } }}
       >
         <Box sx={{ p: 2 }}>
@@ -247,7 +273,13 @@ export default function NotificationSystem({
                   全削除
                 </Button>
               )}
-              <IconButton onClick={() => setDrawerOpen(false)}>
+              <IconButton onClick={() => {
+                if (onClose) {
+                  onClose();
+                } else {
+                  setDrawerOpen(false);
+                }
+              }}>
                 <Close />
               </IconButton>
             </Stack>

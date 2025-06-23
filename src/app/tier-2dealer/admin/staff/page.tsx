@@ -89,12 +89,30 @@ export default function AdminStaffPage() {
   ];
 
   const [notifications, setNotifications] = useState(mockNotifications);
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
+  
   const handleMarkAsRead = useCallback((id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
   }, []);
   const handleClearAll = useCallback(() => setNotifications([]), []);
   const handleApproveChange = useCallback(() => {}, []);
   const handleRejectChange = useCallback(() => {}, []);
+  
+  // 通知関連のハンドラー
+  const handleNotificationClick = () => {
+    setNotificationDrawerOpen(true);
+  };
+
+  const handleNotificationMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleNotificationClearAll = () => {
+    setNotifications([]);
+  };
+
+  // 未読通知数を計算
+  const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
 
   // ログアウト処理
   const handleLogout = () => {
@@ -332,7 +350,10 @@ export default function AdminStaffPage() {
   return (
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       {/* AdminHeader */}
-      <AdminHeader />
+      <AdminHeader 
+        onNotificationClick={handleNotificationClick}
+        notificationCount={unreadNotificationCount}
+      />
 
       <Container maxWidth={false} sx={{ py: 3, px: 2 }}>
         {message && (
@@ -893,6 +914,19 @@ export default function AdminStaffPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 通知システム */}
+      <NotificationSystem
+        notifications={notifications}
+        onMarkAsRead={handleNotificationMarkAsRead}
+        onApproveChange={handleApproveChange}
+        onRejectChange={handleRejectChange}
+        onClearAll={handleNotificationClearAll}
+        isAdminMode={true}
+        open={notificationDrawerOpen}
+        onClose={() => setNotificationDrawerOpen(false)}
+        hideIcon={true}
+      />
     </Box>
   );
 } 
