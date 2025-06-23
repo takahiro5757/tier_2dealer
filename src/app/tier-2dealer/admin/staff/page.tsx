@@ -10,7 +10,6 @@ import {
   Edit, Delete, Add, ArrowBack, Person, Logout, CalendarToday, Visibility, VisibilityOff 
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import NotificationSystem from '../../../../components/NotificationSystem';
 import AdminHeader from '../../../../components/AdminHeader';
 import { useShiftStore } from '../../../../stores/shiftStore';
 import { initialStaffMembers } from './initialStaffMembers';
@@ -22,31 +21,6 @@ const SUBMISSION_STATUS: Record<string, { label: string; color: 'success' | 'war
   submitted: { label: '提出済み', color: 'success' },
   draft: { label: '未提出', color: 'warning' }
 };
-
-const mockNotifications = [
-  {
-    id: '1',
-    type: 'shift_submission' as const,
-    title: 'シフト提出',
-    message: '田中太郎さんが6月分のシフトを提出しました',
-    timestamp: new Date(),
-    isRead: false,
-    staffName: '田中太郎',
-    companyName: '2次店スタッフ',
-    targetAudience: 'festal' as const
-  },
-  {
-    id: '2',
-    type: 'approval' as const,
-    title: 'シフト変更承認',
-    message: 'ANSTEYPEが6月分のシフト変更を承認しました',
-    timestamp: new Date(),
-    isRead: false,
-    staffName: '田中太郎',
-    companyName: '2次店スタッフ',
-    targetAudience: 'festal' as const
-  }
-];
 
 // localStorageキー
 const STAFF_STORAGE_KEY = 'staff_members';
@@ -87,32 +61,6 @@ export default function AdminStaffPage() {
     '2025-05', '2025-06', '2025-07', '2025-08', 
     '2025-09', '2025-10', '2025-11', '2025-12'
   ];
-
-  const [notifications, setNotifications] = useState(mockNotifications);
-  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
-  
-  const handleMarkAsRead = useCallback((id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  }, []);
-  const handleClearAll = useCallback(() => setNotifications([]), []);
-  const handleApproveChange = useCallback(() => {}, []);
-  const handleRejectChange = useCallback(() => {}, []);
-  
-  // 通知関連のハンドラー
-  const handleNotificationClick = () => {
-    setNotificationDrawerOpen(true);
-  };
-
-  const handleNotificationMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  };
-
-  const handleNotificationClearAll = () => {
-    setNotifications([]);
-  };
-
-  // 未読通知数を計算
-  const unreadNotificationCount = notifications.filter(n => !n.isRead).length;
 
   // ログアウト処理
   const handleLogout = () => {
@@ -350,10 +298,7 @@ export default function AdminStaffPage() {
   return (
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       {/* AdminHeader */}
-      <AdminHeader 
-        onNotificationClick={handleNotificationClick}
-        notificationCount={unreadNotificationCount}
-      />
+      <AdminHeader />
 
       <Container maxWidth={false} sx={{ py: 3, px: 2 }}>
         {message && (
@@ -914,19 +859,6 @@ export default function AdminStaffPage() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* 通知システム */}
-      <NotificationSystem
-        notifications={notifications}
-        onMarkAsRead={handleNotificationMarkAsRead}
-        onApproveChange={handleApproveChange}
-        onRejectChange={handleRejectChange}
-        onClearAll={handleNotificationClearAll}
-        isAdminMode={true}
-        open={notificationDrawerOpen}
-        onClose={() => setNotificationDrawerOpen(false)}
-        hideIcon={true}
-      />
     </Box>
   );
 } 
