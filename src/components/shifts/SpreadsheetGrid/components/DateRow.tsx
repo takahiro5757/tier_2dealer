@@ -342,7 +342,6 @@ interface DateRowProps {
   girlUnassignedCount: number;
   highlightedCellId: string | null;
   onUnassignedClick: (date: Date, role: string) => void;
-  onCommentClick: (staffId: string, date: Date) => void;
   columnOrder: string[];
   isExpanded: boolean;
   hideCaseColumns?: boolean;
@@ -362,7 +361,6 @@ const DateRow: React.FC<DateRowProps> = ({
   girlUnassignedCount,
   highlightedCellId,
   onUnassignedClick,
-  onCommentClick,
   columnOrder,
   isExpanded,
   hideCaseColumns = false,

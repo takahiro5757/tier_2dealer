@@ -922,10 +922,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   useEffect(() => {
     setIsClient(true);
   }, []);
-  // コメントダイアログ用の状態
-  const [commentDialogOpen, setCommentDialogOpen] = useState<boolean>(false);
-  const [commentCellKey, setCommentCellKey] = useState<{staffId: string, date: Date} | null>(null);
-  const [commentText, setCommentText] = useState<string>('');
+  // コメント機能は削除されました
   
   // スタッフの順序管理用ステート
   const [staffOrder, setStaffOrder] = useState<string[]>([]);
@@ -1293,55 +1290,9 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   [staffRequests, staffMembers]);
 
   // コメントダイアログを閉じる
-  const handleCloseCommentDialog = useCallback(() => {
-    setCommentDialogOpen(false);
-    setCommentCellKey(null);
-    setCommentText('');
-  }, []);
 
-  // useShiftContextはコンポーネント内でのみ使用できるため、
-  // ShiftProvider内でサブコンポーネントを作成して処理します
-  const CommentHandler: React.FC<{
-    open: boolean;
-    cellKey: {staffId: string, date: Date} | null;
-    initialText: string;
-    onClose: () => void;
-  }> = ({ open, cellKey, initialText, onClose }) => {
-    const { getComment, updateComment } = useShiftContext();
-    
-    // ダイアログを開く際に既存コメントを取得
-    useEffect(() => {
-      if (open && cellKey) {
-        const comment = getComment(cellKey.staffId, cellKey.date);
-        setCommentText(comment);
-      }
-    }, [open, cellKey, getComment]);
-    
-    // コメント保存ハンドラー
-    const handleSave = useCallback((comment: string) => {
-      if (cellKey) {
-        updateComment(cellKey.staffId, cellKey.date, comment);
-      }
-      onClose();
-    }, [cellKey, updateComment, onClose]);
-    
-    if (!open || !cellKey) return null;
 
-  return (
-      <CommentDialog
-        isOpen={open}
-        initialComment={initialText}
-        onSave={handleSave}
-        onCancel={onClose}
-      />
-    );
-  };
-
-  // コメントダイアログを開くハンドラー - メインコンポーネントで使用
-  const handleOpenCommentDialog = useCallback((staffId: string, date: Date) => {
-    setCommentCellKey({ staffId, date });
-    setCommentDialogOpen(true);
-  }, []);
+  // コメント機能は削除されました
 
   // 固定情報行（展開時）
   const stickyInfoExpanded = (lbl: string, fn: (m: any) => React.ReactNode, top: number) => (
@@ -1912,7 +1863,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                 girlUnassignedCount={getUnassigned(dateInfo.date, 'ガール').length}
                 highlightedCellId={highlightedCell}
                 onUnassignedClick={handleUnassignedClick}
-                onCommentClick={handleOpenCommentDialog}
+
                 columnOrder={columnOrder}
                 isExpanded={isExpanded}
                 hideCaseColumns={hideCaseColumns}
@@ -2275,13 +2226,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         </STable>
       </Scroll>
       
-      {/* コメント処理コンポーネント */}
-      <CommentHandler
-        open={commentDialogOpen}
-        cellKey={commentCellKey}
-        initialText={commentText}
-        onClose={handleCloseCommentDialog}
-      />
+
     </ThemeProvider>
   </ShiftProvider>
   );
