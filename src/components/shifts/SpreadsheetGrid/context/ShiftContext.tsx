@@ -19,7 +19,6 @@ interface ShiftContextType {
   customRates: {[key: string]: number};
   changedStatuses: {[key: string]: boolean};
   lockedLocations: {[key: string]: boolean};
-  cellComments: {[key: string]: string};
   // 変更履歴の追加
   statusHistory: {[key: string]: StatusHistoryEntry[]};
   
@@ -32,8 +31,6 @@ interface ShiftContextType {
   updateStatus: (staffId: string, date: Date, status: '○' | '×' | '-') => void;
   updateRate: (staffId: string, date: Date, rate: number) => void;
   toggleLocationLock: (staffId: string, date: Date) => void;
-  updateComment: (staffId: string, date: Date, comment: string) => void;
-  getComment: (staffId: string, date: Date) => string;
   // 変更履歴取得関数の追加
   getStatusHistory: (staffId: string, date: Date) => StatusHistoryEntry[];
 }
@@ -68,7 +65,6 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
   const [customRates, setCustomRates] = useState<{[key: string]: number}>({});
   const [changedStatuses, setChangedStatuses] = useState<{[key: string]: boolean}>({});
   const [lockedLocations, setLockedLocations] = useState<{[key: string]: boolean}>({});
-  const [cellComments, setCellComments] = useState<{[key: string]: string}>({});
   // 変更履歴の状態を追加
   const [statusHistory, setStatusHistory] = useState<{[key: string]: StatusHistoryEntry[]}>({});
 
@@ -230,39 +226,12 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
     }));
   }, [getLocalDateString]);
 
-  // コメント更新
-  const updateComment = useCallback((staffId: string, date: Date, comment: string): void => {
-    const dateStr = getLocalDateString(date);
-    const key = `${staffId}-${dateStr}`;
-    
-    if (comment.trim()) {
-      setCellComments(prev => ({
-        ...prev,
-        [key]: comment.trim()
-      }));
-    } else {
-      setCellComments(prev => {
-        const newComments = {...prev};
-        delete newComments[key];
-        return newComments;
-      });
-    }
-  }, [getLocalDateString]);
-
-  // コメント取得
-  const getComment = useCallback((staffId: string, date: Date): string => {
-    const dateStr = getLocalDateString(date);
-    const key = `${staffId}-${dateStr}`;
-    return cellComments[key] || '';
-  }, [cellComments, getLocalDateString]);
-
   const value = {
     shifts,
     customStatuses,
     customRates,
     changedStatuses,
     lockedLocations,
-    cellComments,
     statusHistory,
     getShift,
     getStatus,
@@ -272,8 +241,6 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
     updateStatus,
     updateRate,
     toggleLocationLock,
-    updateComment,
-    getComment,
     getStatusHistory
   };
 

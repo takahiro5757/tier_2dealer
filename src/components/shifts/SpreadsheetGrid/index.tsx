@@ -10,7 +10,6 @@ import { ShiftProvider, useShiftContext } from './context/ShiftContext';
 import { DateInfo, StaffRequest, Shift } from './types';
 import { StaffMember } from '@/types/staff';
 import DateRow from './components/DateRow';
-import CommentDialog from './components/CommentDialog';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import LocationCell from './components/LocationCell';

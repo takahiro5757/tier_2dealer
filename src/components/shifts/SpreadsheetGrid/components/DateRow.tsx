@@ -514,7 +514,6 @@ const DateRow: React.FC<DateRowProps> = ({
               isUnassigned={!!isUnassigned}
               location={shift?.location}
               cellId={cellId}
-              onCommentClick={onCommentClick}
               lockEnabled={typeof (window as any)?.__locationLockEnabled === 'boolean' ? (window as any).__locationLockEnabled : true}
             />
           </React.Fragment>
