@@ -955,10 +955,31 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
 
   // 初期化時にスタッフIDの配列を作成
   useEffect(() => {
-    if (staffMembers.length > 0 && staffOrder.length === 0) {
-      setStaffOrder(staffMembers.map(staff => staff.id));
+    console.log(`[SpreadsheetGrid] staffMembers変更: length=${staffMembers.length}`, staffMembers.slice(0, 3).map(s => ({ id: s.id, name: s.name })));
+    
+    if (staffMembers.length > 0) {
+      // staffMembersが変更された場合、新しいスタッフがあれば追加し、存在しないスタッフは削除
+      setStaffOrder(prevOrder => {
+        const currentStaffIds = staffMembers.map(staff => staff.id);
+        
+        console.log(`[SpreadsheetGrid] 現在のスタッフID:`, currentStaffIds.slice(0, 5));
+        console.log(`[SpreadsheetGrid] 前回の順序:`, prevOrder.slice(0, 5));
+        
+        // 既存の順序から存在しないスタッフを削除
+        const filteredOrder = prevOrder.filter(id => currentStaffIds.includes(id));
+        
+        // 新しいスタッフを末尾に追加
+        const newStaffIds = currentStaffIds.filter(id => !filteredOrder.includes(id));
+        
+        const newOrder = [...filteredOrder, ...newStaffIds];
+        console.log(`[SpreadsheetGrid] 新しい順序:`, newOrder.slice(0, 5));
+        
+        return newOrder;
+      });
+    } else {
+      console.log(`[SpreadsheetGrid] staffMembersが空のため処理をスキップ`);
     }
-  }, [staffMembers, staffOrder.length]);
+  }, [staffMembers]);
   
   // 現在の順序でソートされたスタッフメンバー
   const orderedStaffMembers = useMemo(() => {

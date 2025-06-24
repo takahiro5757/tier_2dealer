@@ -1725,9 +1725,9 @@ export default function AdminShiftsPage() {
         {/* シフト表 */}
         <Paper sx={{ mb: 3, width: '100%', overflow: 'hidden' }}>
           <SpreadsheetGrid
-            staffMembers={isMounted ? staffMembers : []}
-            shifts={isMounted ? getMergedShifts() : []}
-            staffRequests={isMounted ? staffRequests : undefined}
+            staffMembers={staffMembers}
+            shifts={getMergedShifts()}
+            staffRequests={staffRequests}
             year={year}
             month={month}
             hideCaseColumns={true}
@@ -1754,9 +1754,9 @@ export default function AdminShiftsPage() {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             ※提出後はANSTEYPE管理者が承認するまで編集できません。
           </Typography>
-          <Typography variant="body2" color="primary.main">
-            対象スタッフ数: {staffMembers?.length || 0}名
-          </Typography>
+                      <Typography variant="body2" color="primary.main">
+              対象スタッフ数: {staffMembers.length}名
+            </Typography>
           <Typography variant="body2" color="primary.main">
             提出先: ANSTEYPE管理システム
           </Typography>
@@ -1858,12 +1858,12 @@ export default function AdminShiftsPage() {
           {detailDialog.status === 'submitted' && '提出済みスタッフ'}
           {detailDialog.status === 'draft' && '未提出スタッフ'}
           <Typography variant="subtitle2" color="text.secondary">
-            {isMounted ? detailDialog.staffList.length : '-'}名
+            {detailDialog.staffList.length}名
           </Typography>
         </DialogTitle>
         <DialogContent>
           <Stack spacing={1}>
-            {isMounted && (detailDialog.staffList as StaffMemberWithStatus[]).map((staff) => (
+            {(detailDialog.staffList as StaffMemberWithStatus[]).map((staff) => (
               <Box
                 key={staff.id}
                 sx={{
@@ -1903,7 +1903,7 @@ export default function AdminShiftsPage() {
       {/* 非表示のExcelExportコンポーネント（設定メニューから呼び出される） */}
       <Box sx={{ display: 'none' }}>
         <ExcelExport
-          staffMembers={staffMembers || []}
+          staffMembers={staffMembers}
           shifts={shifts}
           currentYear={parseInt(currentYear)}
           currentMonth={parseInt(currentMonth)}
