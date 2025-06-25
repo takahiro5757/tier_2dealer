@@ -15,7 +15,12 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  TextField
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText
 } from '@mui/material';
 import {
   Send,
@@ -49,6 +54,7 @@ export default function StaffInputPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string>('');
   const [message, setMessage] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // グローバルストアの利用
   const {
@@ -239,8 +245,8 @@ export default function StaffInputPage() {
     updateShift(currentYear.toString(), currentMonth.toString(), shiftUpdate.id, shiftUpdate);
   };
 
-  // 管理者に提出
-  const handleSubmit = async () => {
+  // 提出確認ダイアログを表示
+  const handleSubmitClick = () => {
     if (!currentUserId || !isLoggedIn) {
       setMessage('ユーザー情報が見つかりません');
       return;
@@ -256,8 +262,26 @@ export default function StaffInputPage() {
       return;
     }
 
+    setShowConfirmDialog(true);
+  };
+
+  // 管理者に提出
+  const handleSubmit = async () => {
+    setShowConfirmDialog(false);
+    
+    if (!currentUserId) {
+      setMessage('ユーザー情報が見つかりません');
+      return;
+    }
+    
     setIsLoading(true);
+    
     try {
+      const shiftEntries = Object.entries(shiftData).filter(([date]) => {
+        const entryMonth = new Date(date).getMonth() + 1;
+        return entryMonth === currentMonth;
+      });
+
       for (const [date, status] of shiftEntries) {
         const shiftUpdate = {
           id: `${currentUserId}-${date}`,
@@ -287,6 +311,11 @@ export default function StaffInputPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // ダイアログをキャンセル
+  const handleCancelSubmit = () => {
+    setShowConfirmDialog(false);
   };
 
   // セルのスタイルを取得
@@ -582,7 +611,6 @@ export default function StaffInputPage() {
           </Typography>
           <Typography variant="body2" sx={{ fontSize: '0.8rem', color: '#666', lineHeight: 1.4 }}>
             <strong>・全ての日付の希望を入力してから提出してください。</strong><br/>
-            ・一度提出されたシフトは、システム上での訂正ができません。<br/>
             ※シフト提出後の変更につきましては、お手数をおかけいたしますが、自社管理者までお問い合わせください。
           </Typography>
         </Paper>
@@ -624,7 +652,7 @@ export default function StaffInputPage() {
           <Button
             variant="contained"
             startIcon={<Send />}
-            onClick={handleSubmit}
+            onClick={handleSubmitClick}
             disabled={isLoading || isSubmitted || !isAllDaysCompleted()}
             fullWidth
             sx={{ 
@@ -635,6 +663,57 @@ export default function StaffInputPage() {
           </Button>
         </Box>
       </Container>
+
+      {/* 提出確認ダイアログ */}
+      <Dialog
+        open={showConfirmDialog}
+        onClose={handleCancelSubmit}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          シフト希望提出の確認
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {currentYear}年{currentMonth}月のシフト希望を提出しますか？
+          </DialogContentText>
+          <Box sx={{ mt: 2, p: 2, bgcolor: '#fff3cd', borderRadius: 1, border: '1px solid #ffeaa7' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#856404', mb: 1 }}>
+              ⚠️ 重要な注意事項
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#856404', lineHeight: 1.4 }}>
+              シフト提出後の変更につきましては、お手数をおかけいたしますが、自社管理者までお問い合わせください。
+            </Typography>
+          </Box>
+          {comment.trim() && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                コメント:
+              </Typography>
+              <Typography variant="body2" sx={{ p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                {comment.trim()}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={handleCancelSubmit}
+            color="inherit"
+          >
+            キャンセル
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            variant="contained"
+            color="primary"
+            disabled={isLoading}
+          >
+            {isLoading ? '提出中...' : '提出する'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 } 

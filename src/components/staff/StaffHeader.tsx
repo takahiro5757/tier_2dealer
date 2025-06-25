@@ -5,14 +5,13 @@ import {
   AppBar, 
   Toolbar, 
   Typography, 
-  Avatar, 
   Button, 
   Chip,
   IconButton,
   useTheme,
   useMediaQuery
 } from '@mui/material';
-import { Person, Logout, Dashboard } from '@mui/icons-material';
+import { Logout, Dashboard } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 
 interface StaffHeaderProps {
@@ -141,27 +140,18 @@ export default function StaffHeader({
           {/* 役職チップ - モバイルでは非表示 */}
           {!isMobile && (
             <Chip
-              icon={<Person />}
               label={userRole}
               size="small"
               sx={{ 
                 bgcolor: 'rgba(255, 255, 255, 0.2)', 
                 color: 'white',
-                fontSize: isTablet ? '0.7rem' : '0.75rem',
-                '& .MuiChip-icon': { color: 'white' }
+                fontSize: isTablet ? '0.7rem' : '0.75rem'
               }}
             />
           )}
           
           {/* ユーザー情報 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.5 : 1 }}>
-            <Avatar sx={{ 
-              width: isMobile ? 24 : 32, 
-              height: isMobile ? 24 : 32, 
-              bgcolor: 'rgba(255, 255, 255, 0.2)' 
-            }}>
-              <Person fontSize={isMobile ? "small" : "medium"} />
-            </Avatar>
             {/* ユーザー名 - モバイルでは非表示 */}
             {!isMobile && (
               <Typography 
