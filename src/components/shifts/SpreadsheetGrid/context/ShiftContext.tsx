@@ -7,15 +7,15 @@ import { StaffMember } from '@/types/staff';
 // 変更履歴の型定義を追加
 interface StatusHistoryEntry {
   timestamp: number; // UNIXタイムスタンプ
-  oldStatus: '○' | '×' | '-';
-  newStatus: '○' | '×' | '-';
+  oldStatus: '○' | '×' | '△' | '-';
+  newStatus: '○' | '×' | '△' | '-';
   username: string; // ユーザー名（実際の環境では認証から取得）
 }
 
 interface ShiftContextType {
   // 状態
   shifts: Shift[];
-  customStatuses: {[key: string]: '○' | '×' | '-'};
+  customStatuses: {[key: string]: '○' | '×' | '△'};
   customRates: {[key: string]: number};
   changedStatuses: {[key: string]: boolean};
   lockedLocations: {[key: string]: boolean};
@@ -24,11 +24,11 @@ interface ShiftContextType {
   
   // 関数
   getShift: (date: Date, staffId: string) => Shift | undefined;
-  getStatus: (staffId: string, date: Date) => '○' | '×' | '-';
+  getStatus: (staffId: string, date: Date) => '○' | '×' | '△';
   getRate: (staffId: string, date: Date, isWeekend: boolean) => number;
   isStatusChanged: (staffId: string, date: Date) => boolean;
   isLocationLocked: (staffId: string, date: Date) => boolean;
-  updateStatus: (staffId: string, date: Date, status: '○' | '×' | '-') => void;
+  updateStatus: (staffId: string, date: Date, status: '○' | '×' | '△') => void;
   updateRate: (staffId: string, date: Date, rate: number) => void;
   toggleLocationLock: (staffId: string, date: Date) => void;
   // 変更履歴取得関数の追加
@@ -50,7 +50,7 @@ interface ShiftProviderProps {
   shifts: Shift[];
   staffMembers: StaffMember[];
   onRateChange?: (staffId: string, date: string, rate: number) => void;
-  onStatusChange?: (staffId: string, date: string, status: '○' | '×' | '-') => void;
+  onStatusChange?: (staffId: string, date: string, status: '○' | '×' | '△') => void;
 }
 
 export const ShiftProvider: React.FC<ShiftProviderProps> = ({ 
@@ -61,7 +61,7 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
   onStatusChange
 }) => {
   // 状態管理
-  const [customStatuses, setCustomStatuses] = useState<{[key: string]: '○' | '×' | '-'}>({});
+  const [customStatuses, setCustomStatuses] = useState<{[key: string]: '○' | '×' | '△'}>({});
   const [customRates, setCustomRates] = useState<{[key: string]: number}>({});
   const [changedStatuses, setChangedStatuses] = useState<{[key: string]: boolean}>({});
   const [lockedLocations, setLockedLocations] = useState<{[key: string]: boolean}>({});
@@ -86,7 +86,7 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
   }, [shifts, getLocalDateString]);
 
   // 希望の値を取得する - カスタム値を優先
-  const getStatus = useCallback((staffId: string, date: Date): '○' | '×' | '-' => {
+  const getStatus = useCallback((staffId: string, date: Date): '○' | '×' | '△' => {
     const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     
@@ -97,7 +97,7 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
     
     // 元のシフトから取得
     const shift = getShift(date, staffId);
-    return shift?.status || '-';
+    return shift?.status || '△';
   }, [customStatuses, getShift, getLocalDateString]);
 
   // 対象日の単価を取得（カスタム単価があればそれを優先）
@@ -139,13 +139,13 @@ export const ShiftProvider: React.FC<ShiftProviderProps> = ({
   }, [statusHistory, getLocalDateString]);
 
   // 希望更新
-  const updateStatus = useCallback((staffId: string, date: Date, status: '○' | '×' | '-'): void => {
+  const updateStatus = useCallback((staffId: string, date: Date, status: '○' | '×' | '△'): void => {
     const dateStr = getLocalDateString(date);
     const key = `${staffId}-${dateStr}`;
     
     // 元の値を取得
     const originalShift = shifts.find(s => s.date === dateStr && s.staffId === staffId);
-    const originalStatus = originalShift?.status || '-';
+    const originalStatus = originalShift?.status || '△';
     const currentStatus = getStatus(staffId, date);
     
     // 変更がない場合は何もしない

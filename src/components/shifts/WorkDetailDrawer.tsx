@@ -56,7 +56,7 @@ interface Shift {
   id: string;
   staffId: string;
   date: string;
-  status: '○' | '×' | '-';
+  status: '○' | '×' | '△';
   location?: string;
   rate?: number;
   comment?: string;

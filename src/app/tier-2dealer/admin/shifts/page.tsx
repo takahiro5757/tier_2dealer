@@ -174,7 +174,7 @@ const generateDummyShifts = (year: number, month: number): Shift[] => {
         const dateNum = day + month * 100 + year * 10000;
         const pseudoRandom = seedRandom(staffIdNum * 123 + dateNum * 456);
         
-        let status: '○' | '×' | '-' = '-';
+        let status: '○' | '×' | '△' = '△';
         
         // 6月の場合は特別処理：20日分の○を確実に設定
         if (month === 6) {
@@ -185,7 +185,7 @@ const generateDummyShifts = (year: number, month: number): Shift[] => {
               console.log(`[6月特別処理] ${staff.name} 6/${day}: 強制的に○を設定 (SubmissionStatus=${submissionStatus})`);
             }
           } else {
-            status = day <= 25 ? '×' : '-';
+            status = day <= 25 ? '×' : '△';
           }
         } else {
           // ガールとクローザーで出勤確率を変える
@@ -274,7 +274,7 @@ const generateDummyShifts = (year: number, month: number): Shift[] => {
           const dateNum = day + month * 100 + year * 10000;
           const pseudoRandom = seedRandom(staffIdNum * 123 + dateNum * 456);
           
-          let status: '○' | '×' | '-' = '-';
+          let status: '○' | '×' | '△' = '△';
           
           // 6月の場合は特別処理：20日分の○を確実に設定
           if (month === 6) {
@@ -285,7 +285,7 @@ const generateDummyShifts = (year: number, month: number): Shift[] => {
                 console.log(`[6月特別処理(未提出)] ${staff.name} 6/${day}: 強制的に○を設定 (SubmissionStatus=${submissionStatus})`);
               }
             } else {
-              status = day <= 25 ? '×' : '-';
+              status = day <= 25 ? '×' : '△';
             }
           } else {
             // ガールとクローザーで出勤確率を変える
@@ -362,7 +362,7 @@ const generateDummyShifts = (year: number, month: number): Shift[] => {
   const statusCounts = {
     '○': shifts.filter(s => s.status === '○').length,
     '×': shifts.filter(s => s.status === '×').length,
-    '-': shifts.filter(s => s.status === '-').length,
+    '△': shifts.filter(s => s.status === '△').length,
   };
   const locationCounts = {
     'with_location': shifts.filter(s => s.status === '○' && s.location).length,
@@ -826,7 +826,7 @@ export default function AdminShiftsPage() {
         // 変更されたシフトを特定
         tempStaffShifts.forEach(tempShift => {
           const originalShift = originalStaffShifts.find(s => s.date === tempShift.date);
-          const originalStatus = originalShift?.status || '-';
+          const originalStatus = originalShift?.status || '△';
           
           if (originalStatus !== tempShift.status) {
             changes.push({
@@ -991,7 +991,7 @@ export default function AdminShiftsPage() {
   }, [isSubmitted]);
 
   // 希望列・要望行の編集ハンドラ（提出前は直接更新、提出後は一時データを更新）
-  const handleStatusChange = (staffId: string, date: string, newStatus: '○' | '×' | '-') => {
+  const handleStatusChange = (staffId: string, date: string, newStatus: '○' | '×' | '△') => {
     if (!isSubmitted) {
       // 提出前：直接ストアを更新
       const { useShiftStore } = require('../../../../stores/shiftStore');
@@ -1305,7 +1305,7 @@ export default function AdminShiftsPage() {
 
       tempStaffShifts.forEach(tempShift => {
         const originalShift = originalStaffShifts.find(s => s.date === tempShift.date);
-        const originalStatus = originalShift?.status || '-';
+        const originalStatus = originalShift?.status || '△';
 
         if (originalStatus !== tempShift.status) {
           shiftChanges.push({
@@ -1732,7 +1732,7 @@ export default function AdminShiftsPage() {
             month={month}
             hideCaseColumns={true}
             isReadOnly={isSubmitted && !isInEditMode} // 提出前は編集可、提出後は編集モード時のみ編集可
-            onStatusChange={!isSubmitted || isInEditMode ? handleStatusChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
+            onStatusChange={!isSubmitted || isInEditMode ? handleStatusChange as any : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
             onRequestTextChange={!isSubmitted || isInEditMode ? handleRequestTextChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
             onRequestChange={!isSubmitted || isInEditMode ? handleRequestChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
             onRateChange={undefined}

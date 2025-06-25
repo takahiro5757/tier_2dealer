@@ -10,7 +10,7 @@ export interface Shift {
   id?: string; // シフトの一意識別子
   date: string; 
   staffId: string; 
-  status: '○' | '×' | '-'; 
+  status: '○' | '×' | '△'; 
   location?: string;
   rate?: number; // 単価
   comment?: string; // コメント（シフト提出時のコメント）
@@ -26,7 +26,7 @@ export interface Shift {
   version?: number; // データバージョン（楽観的排他制御用）
   
   // 変更申請用フィールド
-  originalStatus?: '○' | '×' | '-'; // 変更前のステータス（変更申請時のみ）
+  originalStatus?: '○' | '×' | '△'; // 変更前のステータス（変更申請時のみ）
   changeReason?: string; // 変更理由
   isChangeRequest?: boolean; // 変更申請フラグ
 }
@@ -52,7 +52,7 @@ export interface SpreadsheetGridProps {
   staffMembers: StaffMember[]; 
   shifts: Shift[];
   onRateChange?: (staffId: string, date: string, rate: number) => void; 
-  onStatusChange?: (staffId: string, date: string, status: '○' | '×' | '-') => void;
+  onStatusChange?: (staffId: string, date: string, status: '○' | '×' | '△') => void;
   onRequestTextChange?: (staffId: string, text: string) => void; // 要望テキスト変更コールバック
   hideCaseColumns?: boolean; // C案件からG未決までの列を隠すオプション
   hideCommentRow?: boolean; // コメント行を隠すオプション

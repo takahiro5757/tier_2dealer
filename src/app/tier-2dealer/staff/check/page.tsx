@@ -6,7 +6,8 @@ import {
   TableHead, TableRow, Button, Alert, AppBar, Toolbar, Chip, Grid
 } from '@mui/material';
 import { 
-  CheckCircle, Cancel, Remove, Logout, CalendarToday, ArrowBack, Dashboard, HelpOutline 
+  CheckCircle, Cancel, Remove, Logout, CalendarToday, ArrowBack, Dashboard, HelpOutline,
+  WorkOutline, LocationOn, Schedule
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import YearMonthSelector from '../../../../components/YearMonthSelector';
@@ -17,7 +18,7 @@ import StaffHeader from '../../../../components/staff/StaffHeader';
 interface ConfirmedShift {
   date: string;
   staffId: string;
-  requestedStatus: '○' | '×' | '-'; // スタッフが希望した記号
+  requestedStatus: '○' | '×' | '△'; // スタッフが希望した記号
   status: '確定' | '休み' | '現場未確定' | '詳細未確定';
   agency?: string;
   location?: string;
@@ -43,7 +44,7 @@ interface WorkDetail {
   id: string;
   date: string;
   dayOfWeek: string;
-  requestedStatus: '○' | '×' | '-';
+  requestedStatus: '○' | '×' | '△';
   status: '確定' | '休み' | '現場未確定' | '詳細未確定';
   agency?: string;
   location?: string;
@@ -72,6 +73,30 @@ interface WorkDetail {
     }[];
   };
 }
+
+// 希望記号の色を取得する関数
+const getRequestedStatusColor = (status: '○' | '×' | '△') => {
+  switch (status) {
+    case '○': return '#2e7d32'; // 緑
+    case '×': return '#d32f2f'; // 赤
+    case '△': return '#b8860b'; // 薄黄色系
+    default: return '#666666'; // グレー
+  }
+};
+
+// 背景色を取得する関数（稼働が確約されている日は緑色）
+const getBackgroundColor = (status: string, day: number) => {
+  if (status === '確定') return '#e7f5e0'; // 薄い緑（確定）
+  if (status === '休み') return '#f5f5f5'; // 薄いグレー（休み）
+  
+  // 稼働が確約されている日（後半の数箇所を緑色にする）
+  // 月の後半（15日以降）で特定の日を緑色にする
+  if (day >= 15 && (day % 4 === 0 || day === 18 || day === 25)) {
+    return '#e7f5e0'; // 薄い緑（稼働確約）
+  }
+  
+  return '#ffffff'; // 白
+};
 
 // 2次店スタッフのダミーデータ
 const dummyStaffMembers = [
@@ -161,7 +186,7 @@ const generateConfirmedShifts = (year: number, month: number, staffId: string): 
   const staffIdNum = parseInt(staffId.replace(/[^0-9]/g, '')) || 1;
   
   // 希望記号を事前に配分（○22日、残りは×）
-  const requestedStatusArray: ('○' | '×' | '-')[] = [];
+  const requestedStatusArray: ('○' | '×' | '△')[] = [];
   
   // ○を22日分追加（月の日数が22日未満の場合は全日）
   const marumDays = Math.min(22, daysInMonth);
@@ -359,9 +384,9 @@ const generateConfirmedShifts = (year: number, month: number, staffId: string): 
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: 'success' | 'warning' | 'error' | 'default' | 'info' | 'primary'; icon: React.ReactElement }> = {
-  '確定': { label: '確定', color: 'success', icon: <CheckCircle /> },
-  '現場未確定': { label: '現場未定', color: 'warning', icon: <Remove /> },
-  '詳細未確定': { label: '詳細未定', color: 'info', icon: <HelpOutline /> },
+  '確定': { label: '確定', color: 'success', icon: <WorkOutline /> },
+  '現場未確定': { label: '現場未定', color: 'warning', icon: <LocationOn /> },
+  '詳細未確定': { label: '詳細未定', color: 'info', icon: <Schedule /> },
   '休み': { label: '休み', color: 'error', icon: <Cancel /> }
 };
 
@@ -556,19 +581,17 @@ export default function StaffCheckPage() {
         <Box sx={{ mb: 2 }}>
           {dateData.map((data) => {
             const shift = data.shift;
-            const hasShift = shift && shift.status !== '休み';
-            const shouldApplyGreenBackground = (shift?.requestedStatus === '○' && data.day % 2 === 0) || shift?.status === '確定';
             
             return (
               <Paper 
                 key={data.day}
                 onClick={() => handleOpenWorkDetail(data.day, data.dayOfWeek, shift)}
                 sx={{ 
+                  p: 1.5, 
                   mb: 1, 
                   borderRadius: 2,
-                  border: hasShift ? '2px solid #e0e0e0' : '1px solid #f0f0f0',
-                  backgroundColor: shouldApplyGreenBackground ? '#e7f5e0' : 
-                                 hasShift ? '#fff' : '#d3d3d3',
+                  backgroundColor: shift ? getBackgroundColor(shift.status, data.day) : getBackgroundColor('休み', data.day),
+                  border: shift?.status === '確定' ? '2px solid #4caf50' : '1px solid #e0e0e0',
                   cursor: shift?.status === '確定' ? 'pointer' : 'default',
                   transition: 'all 0.2s ease',
                   '&:hover': shift?.status === '確定' ? {
@@ -577,158 +600,137 @@ export default function StaffCheckPage() {
                   } : {}
                 }}
               >
-                <Box sx={{ p: 1.2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: hasShift ? 0.5 : 0 }}>
-                    {/* 左側：日付と曜日 */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          fontWeight: 'bold',
-                          fontSize: '1rem',
-                          color: !hasShift ? '#000000' : // 休みの場合は黒文字
-                                 data.isWeekend ? (data.dayOfWeek === '日' ? '#d32f2f' : '#1976d2') : 'inherit'
-                        }}
-                      >
-                        {data.day}
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: !hasShift ? '#000000' : // 休みの場合は黒文字
-                                 data.isWeekend ? (data.dayOfWeek === '日' ? '#d32f2f' : '#1976d2') : 'text.secondary',
-                          fontSize: '0.75rem'
-                        }}
-                      >
-                        ({data.dayOfWeek})
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  minHeight: 40
+                }}>
+                  {/* 左セクション: 基本情報 (40%) */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    flex: '0 0 40%',
+                    borderRight: '1px solid #e0e0e0',
+                    pr: 1.5,
+                    position: 'relative'
+                  }}>
+                    {/* 日付（固定位置・左寄り） */}
+                    <Box sx={{ 
+                      width: '70px',
+                      display: 'flex',
+                      justifyContent: 'flex-start'
+                    }}>
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>
+                        {data.day}日({data.dayOfWeek})
                       </Typography>
                     </Box>
-                    
-                    {/* 右側：希望記号と状況 */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                      {/* 希望記号 */}
+
+                    {/* 希望記号（固定位置・左寄り・日付に近づける） */}
+                    <Box sx={{ 
+                      width: '20px',
+                      display: 'flex',
+                      justifyContent: 'flex-start',
+                      ml: -1.7
+                    }}>
                       {shift && (
-                        <Box sx={{ 
-                          minWidth: 36,
-                          height: 36,
-                          borderRadius: '50%',
+                        <Typography sx={{ 
+                          minWidth: 5,
+                          height: 20,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '1.2rem',
+                          fontSize: '1rem',
                           fontWeight: 'bold',
-                          backgroundColor: 'transparent',
-                          color:
-                            shift.requestedStatus === '○' ? '#2e7d32' :
-                            shift.requestedStatus === '×' ? '#d32f2f' : '#ef6c00'
+                          color: getRequestedStatusColor(shift.requestedStatus)
                         }}>
                           {shift.requestedStatus}
-                        </Box>
+                        </Typography>
                       )}
-                      
-                      {/* 状況チップ */}
+                    </Box>
+
+                    {/* ステータス（中央揃え・残りスペース使用） */}
+                    <Box sx={{ 
+                      flex: 1,
+                      display: 'flex',
+                      justifyContent: 'center'
+                    }}>
                       {shift ? (
                         <Chip
-                          icon={STATUS_CONFIG[shift.status].icon}
                           label={STATUS_CONFIG[shift.status].label}
+                          variant="outlined"
                           color={shift.status === '現場未確定' ? undefined : STATUS_CONFIG[shift.status].color}
                           size="small"
                           sx={{ 
-                            fontSize: '0.7rem',
+                            fontSize: '0.6rem',
                             height: 24,
-                            '& .MuiChip-label': {
-                              px: 1
-                            },
+                            fontWeight: 'bold',
+                            borderWidth: 2,
+                            '& .MuiChip-label': { px: 0.4 },
                             ...(shift.status === '現場未確定' && {
-                              backgroundColor: '#C3AF45',
-                              color: '#ffffff',
-                              '& .MuiChip-icon': {
-                                color: '#ffffff'
-                              }
+                              borderColor: '#C3AF45',
+                              color: '#C3AF45'
                             })
                           }}
                         />
                       ) : (
                         <Chip
-                          icon={<Cancel />}
                           label="休み"
+                          variant="outlined"
                           color="error"
                           size="small"
                           sx={{ 
-                            fontSize: '0.7rem',
+                            fontSize: '0.6rem',
                             height: 24,
-                            '& .MuiChip-label': {
-                              px: 1
-                            }
+                            fontWeight: 'bold',
+                            borderWidth: 2,
+                            '& .MuiChip-label': { px: 0.4 }
                           }}
                         />
                       )}
                     </Box>
                   </Box>
-                  
-                  {/* 詳細情報（勤務がある場合のみ） */}
-                  {hasShift && (
-                    <Box sx={{ 
-                      mt: 0.5,
-                      pt: 0.5,
-                      borderTop: '1px solid #f0f0f0'
-                    }}>
-                      <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'flex-start',
-                        gap: 0.5
-                      }}>
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.65rem', mb: 0.2 }}>
-                            勤務地
-                          </Typography>
+
+                  {/* 右セクション: 詳細情報 (60%) */}
+                  <Box sx={{ pl: 1.5, flex: '0 0 60%' }}>
+                    {shift && shift.status !== '休み' ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                        {/* 稼働エリア */}
+                        {shift.location && (
                           <Typography 
                             variant="body2" 
                             sx={{ 
-                              fontSize: '0.75rem', 
+                              fontSize: '0.8rem',
                               fontWeight: 'bold',
+                              color: '#1976d2',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap'
                             }}
                           >
-                            {shift.location || '未定'}
+                            ▶ {shift.location}
                           </Typography>
+                        )}
+                        
+                        {/* 時間と詳細 */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          {shift.startTime && shift.endTime && (
+                            <Typography variant="body2" sx={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
+                              時間: {shift.startTime}-{shift.endTime}
+                            </Typography>
+                          )}
+                          {shift.status === '確定' && (
+                            <Typography variant="caption" color="primary" sx={{ fontSize: '0.6rem' }}>
+                              ＞詳細
+                            </Typography>
+                          )}
                         </Box>
-                        {shift.status !== '詳細未確定' && (
-                          <Box sx={{ textAlign: 'center', minWidth: 'fit-content' }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.65rem', mb: 0.2 }}>
-                              時間
-                            </Typography>
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                fontSize: '0.75rem', 
-                                fontWeight: 'bold',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              {shift.startTime && shift.endTime 
-                                ? `${shift.startTime}-${shift.endTime}` 
-                                : '未定'
-                              }
-                            </Typography>
-                          </Box>
-                        )}
-                        {shift.status === '確定' && (
-                          <Box sx={{ textAlign: 'right', minWidth: 'fit-content' }}>
-                            <Typography variant="body2" color="primary" sx={{ fontSize: '0.65rem', fontWeight: 'bold', mb: 0.2 }}>
-                              詳細
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
-                              タップ
-                            </Typography>
-                          </Box>
-                        )}
                       </Box>
-                    </Box>
-                  )}
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                        お休み
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
               </Paper>
             );
@@ -744,11 +746,18 @@ export default function StaffCheckPage() {
             {/* 確定 */}
             <Box sx={{ textAlign: 'left', mb: 1 }}>
               <Chip
-                icon={STATUS_CONFIG['確定'].icon}
                 label={STATUS_CONFIG['確定'].label}
+                variant="outlined"
                 color={STATUS_CONFIG['確定'].color}
                 size="small"
-                sx={{ fontSize: '0.7rem', height: 24, px: 1, mb: 0.5, '& .MuiChip-label': { px: 1 } }}
+                sx={{ 
+                  fontSize: '0.7rem', 
+                  height: 24, 
+                  fontWeight: 'bold',
+                  borderWidth: 2,
+                  '& .MuiChip-label': { px: 0.4 },
+                  mb: 0.5
+                }}
               />
               <Typography variant="body2" sx={{ fontSize: '0.82rem', color: 'text.secondary', mt: 0.2 }}>
                 現場と詳細がすべて確定している状態です。
@@ -757,11 +766,18 @@ export default function StaffCheckPage() {
             {/* 詳細未確定 */}
             <Box sx={{ textAlign: 'left', mb: 1 }}>
               <Chip
-                icon={STATUS_CONFIG['詳細未確定'].icon}
                 label={STATUS_CONFIG['詳細未確定'].label}
+                variant="outlined"
                 color={STATUS_CONFIG['詳細未確定'].color}
                 size="small"
-                sx={{ fontSize: '0.7rem', height: 24, px: 1, mb: 0.5, '& .MuiChip-label': { px: 1 } }}
+                sx={{ 
+                  fontSize: '0.7rem', 
+                  height: 24, 
+                  fontWeight: 'bold',
+                  borderWidth: 2,
+                  '& .MuiChip-label': { px: 0.4 },
+                  mb: 0.5
+                }}
               />
               <Typography variant="body2" sx={{ fontSize: '0.82rem', color: 'text.secondary', mt: 0.2 }}>
                 現場は決まっていますが、集合時間や持ち物など詳細が未定の状態です。
@@ -770,11 +786,19 @@ export default function StaffCheckPage() {
             {/* 現場未確定 */}
             <Box sx={{ textAlign: 'left', mb: 1 }}>
               <Chip
-                icon={STATUS_CONFIG['現場未確定'].icon}
                 label={STATUS_CONFIG['現場未確定'].label}
-                color={STATUS_CONFIG['現場未確定'].color}
+                variant="outlined"
                 size="small"
-                sx={{ fontSize: '0.7rem', height: 24, px: 1, mb: 0.5, backgroundColor: '#C3AF45', color: '#fff', '& .MuiChip-label': { px: 1 }, '& .MuiChip-icon': { color: '#fff' } }}
+                sx={{ 
+                  fontSize: '0.7rem', 
+                  height: 24, 
+                  fontWeight: 'bold',
+                  borderWidth: 2,
+                  '& .MuiChip-label': { px: 0.4 },
+                  borderColor: '#C3AF45',
+                  color: '#C3AF45',
+                  mb: 0.5
+                }}
               />
               <Typography variant="body2" sx={{ fontSize: '0.82rem', color: 'text.secondary', mt: 0.2 }}>
                 現場が未定の状態です。
@@ -783,11 +807,18 @@ export default function StaffCheckPage() {
             {/* 休み */}
             <Box sx={{ textAlign: 'left', mb: 1 }}>
               <Chip
-                icon={STATUS_CONFIG['休み'].icon}
                 label={STATUS_CONFIG['休み'].label}
+                variant="outlined"
                 color={STATUS_CONFIG['休み'].color}
                 size="small"
-                sx={{ fontSize: '0.7rem', height: 24, px: 1, mb: 0.5, '& .MuiChip-label': { px: 1 } }}
+                sx={{ 
+                  fontSize: '0.7rem', 
+                  height: 24, 
+                  fontWeight: 'bold',
+                  borderWidth: 2,
+                  '& .MuiChip-label': { px: 0.4 },
+                  mb: 0.5
+                }}
               />
               <Typography variant="body2" sx={{ fontSize: '0.82rem', color: 'text.secondary', mt: 0.2 }}>
                 お休みの日です。

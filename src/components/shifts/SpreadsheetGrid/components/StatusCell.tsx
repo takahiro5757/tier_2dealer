@@ -41,8 +41,8 @@ interface StatusCellProps {
 interface HistoryTooltipContentProps {
   history: Array<{
     timestamp: number;
-    oldStatus: '○' | '×' | '-';
-    newStatus: '○' | '×' | '-';
+    oldStatus: string;
+    newStatus: string;
     username: string;
   }>;
 }
@@ -168,8 +168,8 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
   };
   
   // 希望を選択
-  const handleStatusSelect = (newStatus: '○' | '×' | '-') => {
-    updateStatus(staffId, date, newStatus);
+  const handleStatusSelect = (newStatus: '○' | '×' | '△') => {
+    updateStatus(staffId, date, newStatus as any);
     setAnchorEl(null); // 直接nullを設定してメニューを閉じる
     // ○以外を選択した場合はハイライトを解除
     if (newStatus !== '○') {
@@ -297,14 +297,14 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
           <MenuItem 
             onClick={(e) => {
               e.stopPropagation();
-              handleStatusSelect('-');
+              handleStatusSelect('△');
             }}
             sx={{ 
-              color: '#757575',
-              '&:hover': { backgroundColor: '#f5f5f5' }
+              color: '#b8860b',
+              '&:hover': { backgroundColor: '#fffbcc' }
             }}
           >
-            - 未定
+            △ 未定
           </MenuItem>
         </Menu>
         

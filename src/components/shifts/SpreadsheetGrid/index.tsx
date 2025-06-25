@@ -895,7 +895,7 @@ export interface SpreadsheetGridProps {
   shifts: Shift[];
   staffRequests?: StaffRequest[]; // 外部から要望データを渡すオプション
   onRateChange?: (staffId: string, date: string, newRate: number) => void;
-  onStatusChange?: (staffId: string, date: string, newStatus: '○' | '×' | '-') => void;
+  onStatusChange?: (staffId: string, date: string, newStatus: '○' | '×' | '△') => void;
   onRequestTextChange?: (staffId: string, text: string) => void;
   onRequestChange?: (staffId: string, field: 'totalRequest' | 'weekendRequest', value: number) => void; // 要望数変更コールバック
   hideCaseColumns?: boolean;
@@ -1472,15 +1472,15 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
     console.log(`[SpreadsheetGrid] handleStatusClick: originalDate=${date.toDateString()}, dateStr=${dateStr}`);
     
     const currentShift = shifts.find(s => s.staffId === staffId && s.date === dateStr);
-    let newStatus: '○' | '×' | '-';
+    let newStatus: '○' | '×' | '△';
 
     // ステータスを循環させる: - → ○ → × → -
-    if (!currentShift || currentShift.status === '-') {
+    if (!currentShift || currentShift.status === '△') {
       newStatus = '○';
     } else if (currentShift.status === '○') {
       newStatus = '×';
     } else {
-      newStatus = '-';
+      newStatus = '△';
     }
 
     // スタッフ情報を取得

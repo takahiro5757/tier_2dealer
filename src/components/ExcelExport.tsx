@@ -414,7 +414,7 @@ const ExcelExport: React.FC<ExcelExportProps> = ({
         const shift = shifts.find(s => s.staffId === staff.id && s.date === dateStr);
         
         // 希望（シフト状況）
-        dayRow.push(shift?.status || '-');
+        dayRow.push(shift?.status || '△');
         
         // 単価
         if (shift && shift.status === '○') {

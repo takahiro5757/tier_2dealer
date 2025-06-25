@@ -29,7 +29,7 @@ import { useRouter } from 'next/navigation';
 import { useShiftStore } from '../../../../stores/shiftStore';
 import StaffHeader from '../../../../components/staff/StaffHeader';
 
-type ShiftStatus = '○' | '×' | '-';
+type ShiftStatus = '○' | '×' | '△';
 
 interface ShiftData {
   [key: string]: ShiftStatus;
@@ -229,7 +229,7 @@ export default function StaffInputPage() {
       id: `${currentUserId}-${dateStr}`,
       date: dateStr,
       staffId: currentUserId,
-      status: selectedMode as '○' | '×' | '-',
+      status: selectedMode as '○' | '×' | '△',
       submissionStatus: 'draft' as const,
       syncStatus: 'pending' as const,
       lastModified: new Date(),
@@ -263,7 +263,7 @@ export default function StaffInputPage() {
           id: `${currentUserId}-${date}`,
           date: date,
           staffId: currentUserId,
-          status: status as '○' | '×' | '-',
+          status: status as '○' | '×' | '△',
           submissionStatus: 'submitted' as const,
           syncStatus: 'pending' as const,
           lastModified: new Date(),
@@ -359,10 +359,10 @@ export default function StaffInputPage() {
           display: 'inline-block',
           boxShadow: '0 1px 3px rgba(244, 67, 54, 0.2)'
         };
-      case '-':
+      case '△':
         return {
-          backgroundColor: '#f5f5f5',
-          color: '#666666',
+          backgroundColor: '#fffbcc',
+          color: '#b8860b',
           borderRadius: '4px',
           padding: '2px 6px',
           fontSize: '1rem',
@@ -370,7 +370,7 @@ export default function StaffInputPage() {
           minWidth: '20px',
           textAlign: 'center' as const,
           display: 'inline-block',
-          boxShadow: '0 1px 3px rgba(158, 158, 158, 0.2)'
+          boxShadow: '0 1px 3px rgba(184, 134, 11, 0.2)'
         };
       default:
         return null;
@@ -507,13 +507,13 @@ export default function StaffInputPage() {
                     <Typography sx={{ fontSize: '0.85rem' }}>勤務不可</Typography>
                   </Box>
                 </MenuItem>
-                <MenuItem value="-">
+                <MenuItem value="△">
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Box sx={{
                       width: 18,
                       height: 18,
-                      backgroundColor: '#f5f5f5',
-                      color: '#666666',
+                      backgroundColor: '#fffbcc',
+                      color: '#b8860b',
                       borderRadius: 1,
                       display: 'flex',
                       alignItems: 'center',
@@ -521,7 +521,7 @@ export default function StaffInputPage() {
                       fontSize: '0.7rem',
                       fontWeight: 600
                     }}>
-                      -
+                      △
                     </Box>
                     <Typography sx={{ fontSize: '0.85rem' }}>未定</Typography>
                   </Box>

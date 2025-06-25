@@ -7,7 +7,8 @@ import {
 } from '@mui/material';
 import { 
   CalendarToday, Schedule, LocationOn, Person, Logout, 
-  EditCalendar, CheckCircle, Work, Phone, AccessTime, Cancel, Remove, HelpOutline
+  EditCalendar, CheckCircle, Work, Phone, AccessTime, Cancel, Remove, HelpOutline,
+  WorkOutline
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import WorkDetailDrawer from '../../../../components/shifts/WorkDetailDrawer';
@@ -37,7 +38,7 @@ interface DrawerWorkDetail {
   id: string;
   date: string;
   dayOfWeek: string;
-  requestedStatus: '○' | '×' | '-';
+  requestedStatus: '○' | '×' | '△';
   status: '確定' | '休み' | '現場未確定' | '詳細未確定';
   agency?: string;
   location?: string;
@@ -342,10 +343,10 @@ export default function StaffDashboardPage() {
     const targetDate = title === '今日の稼働' ? today : tomorrow;
 
     // checkページと同じステータス設定
-    const statusConfig = {
-      '確定': { label: '確定', color: 'success', icon: <CheckCircle /> },
-      '現場未確定': { label: '現場未定', color: 'warning', icon: <Remove /> },
-      '詳細未確定': { label: '詳細未定', color: 'info', icon: <HelpOutline /> },
+    const statusConfig: Record<string, { label: string; color: 'success' | 'warning' | 'info' | 'error' | 'default' | 'primary' | 'secondary'; icon: React.ReactElement }> = {
+      '確定': { label: '確定', color: 'success', icon: <WorkOutline /> },
+      '現場未確定': { label: '現場未定', color: 'warning', icon: <LocationOn /> },
+      '詳細未確定': { label: '詳細未定', color: 'info', icon: <Schedule /> },
       '休み': { label: '休み', color: 'error', icon: <Cancel /> }
     };
 
@@ -354,8 +355,7 @@ export default function StaffDashboardPage() {
     return (
       <Card 
         sx={{ 
-          height: '100%',
-          minHeight: '120px',
+          height: 'fit-content',
           border: hasWork ? '2px solid #e0e0e0' : '1px solid #f0f0f0',
           backgroundColor: hasWork ? '#fff' : '#fafafa',
           cursor: isClickable ? 'pointer' : 'default',
@@ -367,7 +367,7 @@ export default function StaffDashboardPage() {
         }}
         onClick={() => isClickable && handleOpenWorkDetail(work, title)}
       >
-        <CardContent sx={{ p: 1.2, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <CardContent sx={{ pt: 1, px: 1, pb: 0, display: 'flex', flexDirection: 'column' }}>
           {/* タイトル＋上部左右分割レイアウト */}
           <Box sx={{ mb: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '0.93rem', textAlign: 'center', mb: 0.5 }}>
@@ -385,70 +385,61 @@ export default function StaffDashboardPage() {
               </Box>
               {/* 右：ステータスChipのみ */}
               <Chip
-                icon={currentStatus.icon}
                 label={currentStatus.label}
-                color={currentStatus.color as any}
+                variant="outlined"
+                color={work.status === '現場未確定' ? undefined : currentStatus.color as 'success' | 'warning' | 'info' | 'error' | 'default' | 'primary' | 'secondary'}
                 size="small"
-                sx={{ fontSize: '0.8rem', fontWeight: 'bold' }}
+                sx={{
+                  fontSize: '0.6rem',
+                  height: 24,
+                  fontWeight: 'bold',
+                  borderWidth: 2,
+                  '& .MuiChip-label': { px: 0.4 },
+                  ...(work.status === '現場未確定' && {
+                    borderColor: '#C3AF45',
+                    color: '#C3AF45'
+                  })
+                }}
               />
             </Box>
           </Box>
 
           {/* 下部：詳細情報（勤務がある場合のみ） */}
-          {work.status !== '休み'
-            ? (
-              <Box sx={{ mt: 0.5, pt: 0.5, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 0.5 }}>
-                {/* 左：勤務地 */}
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.65rem', mb: 0.2 }}>
-                    勤務地
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontSize: '0.75rem', 
-                      fontWeight: 'bold',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {work.location || '未定'}
-                  </Typography>
-                </Box>
-                {/* 中央：時間 */}
-                <Box sx={{ textAlign: 'center', minWidth: 'fit-content' }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.65rem', mb: 0.2 }}>
-                    時間
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontSize: '0.75rem', 
-                      fontWeight: 'bold',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {work.startTime && work.endTime 
-                      ? `${work.startTime}-${work.endTime}` 
-                      : '未定'
-                    }
-                  </Typography>
-                </Box>
-                {/* 右端：確定時のみ詳細タップ */}
-                {work.status === '確定'
-                  ? (
-                    <Box sx={{ textAlign: 'right', minWidth: 'fit-content' }}>
-                      <Typography variant="body2" color="primary" sx={{ fontSize: '0.65rem', fontWeight: 'bold', mb: 0.2 }}>
-                        詳細
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>
-                        タップ
-                      </Typography>
-                    </Box>
-                  ) : null}
+          {work.status === '確定' && (
+            <Box sx={{ pt: 0.2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 0.3, pb: 0 }}>
+              {/* 左下：勤務情報まとめて表示 */}
+              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.3, pb: 0 }}>
+                <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'text.secondary', mb: 0 }}>
+                  勤務場所：<span style={{ color: '#222' }}>{work.location || '未定'}</span>
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'text.secondary', mb: 0 }}>
+                  勤務時間：<span style={{ color: '#222' }}>{work.startTime && work.endTime ? `${work.startTime}-${work.endTime}` : '未定'}</span>
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'text.secondary', mb: 0 }}>
+                  集　　合：<span style={{ color: '#222' }}>{(work.meetingTime || work.meetingPlace) ? `${work.meetingTime || ''} ${work.meetingPlace || ''}`.trim() : '未定'}</span>
+                </Typography>
               </Box>
-            ) : null}
+              {/* 右端：詳細タップ */}
+              <Box sx={{ textAlign: 'right', minWidth: 'fit-content', pb: 0 }}>
+                <Typography variant="body2" color="primary" sx={{ fontSize: '0.7rem', fontWeight: 'bold', mb: 0 }}>
+                  詳細
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: '0.65rem', color: 'text.secondary', mb: 0 }}>
+                  タップ
+                </Typography>
+              </Box>
+            </Box>
+          )}
+          {work.status === '詳細未確定' && (
+            <Box sx={{ pt: 0.2, display: 'flex', alignItems: 'flex-start', gap: 0.3 }}>
+              {/* 左下：勤務場所のみ */}
+              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.1 }}>
+                <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'text.secondary' }}>
+                  勤務場所：<span style={{ color: '#222' }}>{work.location || '未定'}</span>
+                </Typography>
+              </Box>
+            </Box>
+          )}
         </CardContent>
       </Card>
     );
