@@ -105,7 +105,7 @@ const generateWorkDetail = (date: Date): WorkDetail | null => {
       '北千住駅前'
     ];
     
-    const agencies = ['株式会社ANSTEYPE', '株式会社イベントプロ', '株式会社マーケティングラボ'];
+    const agencies = ['ピーアップ', '株式会社イベントプロ', '株式会社マーケティングラボ'];
     const managers = ['田中管理者', '佐藤管理者', '山田管理者', '鈴木管理者'];
     const phones = ['090-1111-2222', '090-3333-4444', '090-5555-6666', '090-7777-8888'];
     

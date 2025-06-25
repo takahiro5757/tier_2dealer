@@ -713,7 +713,7 @@ export default function StaffCheckPage() {
                         
                         {/* 時間と詳細 */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          {shift.startTime && shift.endTime && (
+                          {shift.startTime && shift.endTime && shift.status !== '詳細未確定' && (
                             <Typography variant="body2" sx={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
                               時間: {shift.startTime}-{shift.endTime}
                             </Typography>

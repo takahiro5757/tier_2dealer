@@ -92,7 +92,7 @@ const WorkDetailDrawer: React.FC<WorkDetailDrawerProps> = ({
   const [detailEditMode, setDetailEditMode] = useState(false);
   const [detailInfoExpanded, setDetailInfoExpanded] = useState(true);
   const [workDetails, setWorkDetails] = useState({
-    agency: 'ANSTEYPE',
+    agency: 'ピーアップ',
     location: '東京ビッグサイト',
     managerName: '田中管理者',
     managerPhone: '090-1234-5678',
