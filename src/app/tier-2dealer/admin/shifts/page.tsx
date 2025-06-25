@@ -1697,7 +1697,7 @@ export default function AdminShiftsPage() {
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Chip
-                      label={!isSubmitted ? "未連携（提出待ち）" : (isInEditMode ? "同期停止（編集中）" : (isAutoSyncing ? "Ansteyeと同期中" : "同期停止"))}
+                      label={!isSubmitted ? "シフト未同期" : (isInEditMode ? "同期停止（編集中）" : (isAutoSyncing ? "シフト同期中" : "同期停止"))}
                       color={!isSubmitted ? "warning" : (isInEditMode ? "error" : (isAutoSyncing ? "success" : "default"))}
                       size="small"
                     />
