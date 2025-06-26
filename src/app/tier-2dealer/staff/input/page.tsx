@@ -445,12 +445,7 @@ export default function StaffInputPage() {
       />
 
       <Container maxWidth="sm" sx={{ py: 2 }}>
-        {/* メッセージ表示 */}
-        {message && (
-          <Alert severity={message.includes('失敗') ? 'error' : 'success'} sx={{ mb: 2 }}>
-            {message}
-          </Alert>
-        )}
+
 
         {/* 月選択と入力モード */}
         <Paper elevation={1} sx={{ mb: 2 }}>
@@ -641,6 +636,13 @@ export default function StaffInputPage() {
             }}
           />
         </Paper>
+
+        {/* メッセージ表示 */}
+        {message && (
+          <Alert severity={message.includes('失敗') ? 'error' : 'success'} sx={{ mb: 2 }}>
+            {message}
+          </Alert>
+        )}
 
         {/* アクションボタン */}
         <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>

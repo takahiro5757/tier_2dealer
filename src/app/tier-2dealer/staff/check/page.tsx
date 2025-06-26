@@ -830,21 +830,7 @@ export default function StaffCheckPage() {
           </Typography>
         </Paper>
 
-        {/* ログアウトボタン */}
-        <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Button 
-            variant="outlined" 
-            onClick={handleLogout}
-            startIcon={<Logout />}
-            sx={{ 
-              borderRadius: 2,
-              fontSize: '0.9rem',
-              px: 3
-            }}
-          >
-            ログアウト
-          </Button>
-        </Box>
+
       </Box>
 
       {/* 稼働詳細Drawer */}

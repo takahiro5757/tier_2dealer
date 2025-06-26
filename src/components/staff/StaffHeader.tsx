@@ -9,10 +9,16 @@ import {
   Chip,
   IconButton,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
 import { Logout, Dashboard } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface StaffHeaderProps {
   userName?: string;
@@ -35,23 +41,33 @@ export default function StaffHeader({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setLogoutDialogOpen(true);
+  };
+
+  const handleLogoutConfirm = () => {
     // ログアウト処理
     if (typeof window !== 'undefined') {
       localStorage.removeItem('staff_logged_in');
       localStorage.removeItem('user_id');
       localStorage.removeItem('user_name');
     }
+    setLogoutDialogOpen(false);
     if (onLogout) {
       onLogout();
     } else {
-      router.push('/shifts/management/staff/login');
+      router.push('/tier-2dealer/staff/login');
     }
+  };
+
+  const handleLogoutCancel = () => {
+    setLogoutDialogOpen(false);
   };
 
   const handleDashboard = () => {
@@ -152,25 +168,27 @@ export default function StaffHeader({
           
           {/* ユーザー情報 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.5 : 1 }}>
-            {/* ユーザー名 - モバイルでは非表示 */}
-            {!isMobile && (
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  color: 'white', 
-                  fontWeight: 500,
-                  fontSize: isTablet ? '0.75rem' : '0.875rem'
-                }}
-              >
-                {userName}
-              </Typography>
-            )}
+            {/* ユーザー名 - モバイルでも表示 */}
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: 'white', 
+                fontWeight: 500,
+                fontSize: isMobile ? '0.7rem' : isTablet ? '0.75rem' : '0.875rem',
+                maxWidth: isMobile ? '80px' : 'none',
+                overflow: isMobile ? 'hidden' : 'visible',
+                textOverflow: isMobile ? 'ellipsis' : 'clip',
+                whiteSpace: isMobile ? 'nowrap' : 'normal'
+              }}
+            >
+              {userName}
+            </Typography>
           </Box>
 
           {/* ログアウトボタン - モバイルではアイコンのみ */}
           {isMobile ? (
             <IconButton
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               sx={{ 
                 color: 'white',
                 p: 0.5,
@@ -184,7 +202,7 @@ export default function StaffHeader({
           ) : (
             <Button
               startIcon={<Logout />}
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               sx={{ 
                 color: 'white',
                 fontSize: isTablet ? '0.75rem' : '0.875rem',
@@ -199,6 +217,43 @@ export default function StaffHeader({
           )}
         </Box>
       </Toolbar>
+
+      {/* ログアウト確認ダイアログ */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={handleLogoutCancel}
+        aria-labelledby="logout-dialog-title"
+        aria-describedby="logout-dialog-description"
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle id="logout-dialog-title" sx={{ textAlign: 'center' }}>
+          ログアウト確認
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', pb: 2 }}>
+          <DialogContentText id="logout-dialog-description">
+            このアカウントからログアウトしますか？
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', gap: 2, px: 3, pb: 3 }}>
+          <Button 
+            onClick={handleLogoutCancel} 
+            color="primary" 
+            variant="outlined"
+            sx={{ flex: 1, minWidth: 100 }}
+          >
+            キャンセル
+          </Button>
+          <Button 
+            onClick={handleLogoutConfirm} 
+            color="primary" 
+            variant="contained"
+            sx={{ flex: 1, minWidth: 100 }}
+          >
+            ログアウト
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AppBar>
   );
 } 
