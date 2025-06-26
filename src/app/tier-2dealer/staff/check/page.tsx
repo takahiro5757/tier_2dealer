@@ -692,7 +692,7 @@ export default function StaffCheckPage() {
 
                   {/* 右セクション: 詳細情報 (60%) */}
                   <Box sx={{ pl: 1.5, flex: '0 0 60%' }}>
-                    {shift && shift.status !== '休み' ? (
+                    {shift && shift.status !== '休み' && (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
                         {/* 稼働エリア */}
                         {shift.location && (
@@ -725,10 +725,6 @@ export default function StaffCheckPage() {
                           )}
                         </Box>
                       </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                        お休み
-                      </Typography>
                     )}
                   </Box>
                 </Box>
