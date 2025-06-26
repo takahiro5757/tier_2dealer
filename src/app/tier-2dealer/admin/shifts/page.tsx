@@ -1156,6 +1156,13 @@ export default function AdminShiftsPage() {
     });
   };
 
+  // コメント変更ハンドラー（常時編集可能・2次店専用）
+  const handleCommentChange = (staffId: string, comment: string) => {
+    // コメントは2次店専用データなので、提出状態や編集モードに関係なく常時編集可能
+    // LocalStorageでの管理はSpreadsheetGrid内で行われる
+    console.log(`[コメント] 2次店コメント更新: staffId=${staffId}, comment="${comment}"`);
+  };
+
   // バックアップ機能を追加（編集モード管理も含む）
   const createBackup = () => {
     const { useShiftStore } = require('../../../../stores/shiftStore');
@@ -1735,6 +1742,7 @@ export default function AdminShiftsPage() {
             onStatusChange={!isSubmitted || isInEditMode ? handleStatusChange as any : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
             onRequestTextChange={!isSubmitted || isInEditMode ? handleRequestTextChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
             onRequestChange={!isSubmitted || isInEditMode ? handleRequestChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
+            onCommentChange={handleCommentChange} // コメントは常時編集可能
             onRateChange={undefined}
             disableDoubleClick={true}
             requestCellReadOnly={isSubmitted && !isInEditMode} // 提出前は編集可、提出後は編集モード時のみ編集可

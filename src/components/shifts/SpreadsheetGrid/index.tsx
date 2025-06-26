@@ -15,6 +15,7 @@ import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import LocationCell from './components/LocationCell';
 import RequestCell from './components/RequestCell';
 import StatusCell from './components/StatusCell';
+import CommentCell from './components/CommentCell';
 
 /* ===== 定数 ===== */
 const H_HEADER = 32; const H_ROW = 36;
@@ -898,6 +899,7 @@ export interface SpreadsheetGridProps {
   onStatusChange?: (staffId: string, date: string, newStatus: '○' | '×' | '△') => void;
   onRequestTextChange?: (staffId: string, text: string) => void;
   onRequestChange?: (staffId: string, field: 'totalRequest' | 'weekendRequest', value: number) => void; // 要望数変更コールバック
+  onCommentChange?: (staffId: string, comment: string) => void; // コメント変更コールバック
   hideCaseColumns?: boolean;
   hideCommentRow?: boolean;
   isReadOnly?: boolean;
@@ -908,7 +910,7 @@ export interface SpreadsheetGridProps {
 }
 
 export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
-  year, month, staffMembers, shifts, staffRequests: externalStaffRequests, onRateChange, onStatusChange, onRequestTextChange, onRequestChange, hideCaseColumns = false, hideCommentRow = false, isReadOnly = false, showSyncStatus = false, onSubmitToAnsteype, disableDoubleClick = false, requestCellReadOnly
+  year, month, staffMembers, shifts, staffRequests: externalStaffRequests, onRateChange, onStatusChange, onRequestTextChange, onRequestChange, onCommentChange, hideCaseColumns = false, hideCommentRow = false, isReadOnly = false, showSyncStatus = false, onSubmitToAnsteype, disableDoubleClick = false, requestCellReadOnly
 }) => {
   console.log(`[SpreadsheetGrid] コンポーネント初期化: year=${year}, month=${month}, staffMembers.length=${staffMembers.length}`);
   console.log(`[SpreadsheetGrid] 受け取ったshifts:`, shifts.length, shifts.slice(0, 5)); // 最初の5件をログ出力
@@ -919,9 +921,31 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   // Hydrationエラーを防ぐためのクライアントサイドチェック
   const [isClient, setIsClient] = useState(false);
   
+  // コメント管理用ステート
+  const [staffComments, setStaffComments] = useState<Record<string, string>>({});
+  
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    
+    // LocalStorageからコメントデータを読み込み
+    const loadCommentsFromStorage = () => {
+      if (typeof window !== 'undefined') {
+        const storageKey = `comments_${year}_${month}`;
+        const storedComments = localStorage.getItem(storageKey);
+        if (storedComments) {
+          try {
+            const parsedComments = JSON.parse(storedComments);
+            setStaffComments(parsedComments);
+            console.log(`[SpreadsheetGrid] コメントをLocalStorageから読み込み: ${storageKey}`, parsedComments);
+          } catch (error) {
+            console.error(`[SpreadsheetGrid] コメント読み込みエラー:`, error);
+          }
+        }
+      }
+    };
+    
+    loadCommentsFromStorage();
+  }, [year, month]);
   // コメント機能は削除されました
   
   // スタッフの順序管理用ステート
@@ -1364,21 +1388,53 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   // 通常情報行（展開時）
   const infoRowExpanded = (lbl: string, fn: (m: any) => React.ReactNode) => (
     <TableRow>
-      <DateCellFix>{lbl}</DateCellFix>
+      <DateCellFix 
+        sx={lbl === '要望' ? {
+          background: '#f3e5f5',
+          borderTop: '2px solid #000000',
+          color: '#9c27b0'
+        } : {}}
+      >
+        {lbl}
+      </DateCellFix>
       {!hideCaseColumns && columnOrder.map(columnId => {
         if (columnId === 'closerCase') {
-          return <CloserCaseCellFix key={columnId} />;
+          return <CloserCaseCellFix key={columnId} sx={lbl === '要望' ? {
+            background: '#f3e5f5',
+            borderTop: '2px solid #000000',
+            color: '#9c27b0'
+          } : {}} />;
         } else if (columnId === 'girlCase') {
-          return <GirlCaseCellFix key={columnId} />;
+          return <GirlCaseCellFix key={columnId} sx={lbl === '要望' ? {
+            background: '#f3e5f5',
+            borderTop: '2px solid #000000',
+            color: '#9c27b0'
+          } : {}} />;
         } else if (columnId === 'closerAvailable') {
-          return <CloserAvailableCellFix key={columnId} />;
+          return <CloserAvailableCellFix key={columnId} sx={lbl === '要望' ? {
+            background: '#f3e5f5',
+            borderTop: '2px solid #000000',
+            color: '#9c27b0'
+          } : {}} />;
         } else if (columnId === 'girlAvailable') {
-          return <GirlAvailableCellFix key={columnId} />;
+          return <GirlAvailableCellFix key={columnId} sx={lbl === '要望' ? {
+            background: '#f3e5f5',
+            borderTop: '2px solid #000000',
+            color: '#9c27b0'
+          } : {}} />;
         }
         return null;
       })}
-      {!hideCaseColumns && <CloseCellFix />}
-      {!hideCaseColumns && <GirlCellFix />}
+      {!hideCaseColumns && <CloseCellFix sx={lbl === '要望' ? {
+        background: '#f3e5f5',
+        borderTop: '2px solid #000000',
+        color: '#9c27b0'
+      } : {}} />}
+      {!hideCaseColumns && <GirlCellFix sx={lbl === '要望' ? {
+        background: '#f3e5f5',
+        borderTop: '2px solid #000000',
+        color: '#9c27b0'
+      } : {}} />}
       {orderedStaffMembers.map(m => <Cell key={m.id} colSpan={3} className="staff-section">{fn(m)}</Cell>)}
     </TableRow>
   );
@@ -1386,12 +1442,22 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   // 通常情報行（折りたたみ時）
   const infoRowCollapsed = (lbl: string, fn: (m: any) => React.ReactNode) => (
     <TableRow>
-      <DateCellFix>{lbl}</DateCellFix>
+      <DateCellFix 
+        sx={lbl === '要望' ? {
+          background: '#f3e5f5',
+          borderTop: '2px solid #000000',
+          color: '#9c27b0'
+        } : {}}
+      >
+        {lbl}
+      </DateCellFix>
       {!hideCaseColumns && (
       <Cell sx={{ 
         width: W.closerSection,
-        backgroundColor: '#e3f2fd',
+        backgroundColor: lbl === '要望' ? '#f3e5f5' : '#e3f2fd',
         borderRight: '2px solid #000000',
+        borderTop: lbl === '要望' ? '2px solid #000000' : undefined,
+        color: lbl === '要望' ? '#9c27b0' : undefined,
         position: 'sticky',
         left: LEFT.closerSection,
         zIndex: 400
@@ -1399,8 +1465,16 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         {lbl === '平日' ? '¥20,000' : lbl === '土日' ? '¥25,000' : ''}
       </Cell>
       )}
-      {!hideCaseColumns && <CloseCellFixCollapsed />}
-      {!hideCaseColumns && <GirlCellFixCollapsed />}
+      {!hideCaseColumns && <CloseCellFixCollapsed sx={lbl === '要望' ? {
+        background: '#f3e5f5',
+        borderTop: '2px solid #000000',
+        color: '#9c27b0'
+      } : {}} />}
+      {!hideCaseColumns && <GirlCellFixCollapsed sx={lbl === '要望' ? {
+        background: '#f3e5f5',
+        borderTop: '2px solid #000000',
+        color: '#9c27b0'
+      } : {}} />}
       {orderedStaffMembers.map(m => <Cell key={m.id} colSpan={3} className="staff-section">{fn(m)}</Cell>)}
     </TableRow>
   );
@@ -1550,6 +1624,28 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
     }
     
     console.log(`[SpreadsheetGrid] 要望数更新（直接ストア）: staffId=${staffId}, field=${field}, value=${clampedValue}`);
+  };
+
+  // コメント変更ハンドラー（常時編集可能・ローカル管理）
+  const handleCommentChange = (staffId: string, comment: string) => {
+    const updatedComments = {
+      ...staffComments,
+      [staffId]: comment
+    };
+    
+    setStaffComments(updatedComments);
+    
+    // LocalStorageに保存（2次店専用データ）
+    if (typeof window !== 'undefined') {
+      const storageKey = `comments_${year}_${month}`;
+      localStorage.setItem(storageKey, JSON.stringify(updatedComments));
+      console.log(`[SpreadsheetGrid] コメント更新: staffId=${staffId}, comment="${comment}"`);
+    }
+    
+    // 外部コールバックが存在する場合も実行
+    if (onCommentChange) {
+      onCommentChange(staffId, comment);
+    }
   };
 
   // フリーテキスト要望変更ハンドラー
@@ -2188,36 +2284,16 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                 </>
               ))}
               {orderedStaffMembers.map(s => {
-                // そのスタッフの最新のコメントを取得
-                const staffShifts = shifts.filter(shift => shift.staffId === s.id);
-                const latestComment = staffShifts.find(shift => shift.comment)?.comment || '';
-                
-                // デバッグログ追加
-                console.log(`スタッフ ${s.name} (${s.id}): シフト数=${staffShifts.length}, コメント="${latestComment}"`);
+                // 2次店管理のコメントを取得
+                const currentComment = staffComments[s.id] || '';
                 
                 return (
-                  <Cell 
-                    key={s.id} 
-                    colSpan={3}
-                    className="staff-section"
-                    sx={{
-                      background: '#f3e5f5',
-                      borderTop: '1px solid #000000',
-                      color: '#9c27b0',
-                      fontSize: '0.75rem',
-                      textAlign: 'left',
-                      padding: '8px',
-                      maxWidth: '200px',
-                      minHeight: '40px',
-                      height: 'auto',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      lineHeight: 1.4,
-                      verticalAlign: 'top'
-                    }}
-                  >
-                    {latestComment || '（コメントなし）'}
-                  </Cell>
+                  <CommentCell
+                    key={s.id}
+                    staffId={s.id}
+                    comment={currentComment}
+                    onCommentChange={handleCommentChange}
+                  />
                 );
               })}
             </TableRow>
