@@ -349,6 +349,7 @@ export default function AdminStaffPage() {
                   <TableCell sx={{ border: 'none', p: 0 }}></TableCell>
                   <TableCell sx={{ border: 'none', p: 0 }}></TableCell>
                   <TableCell sx={{ border: 'none', p: 0 }}></TableCell>
+                  <TableCell sx={{ border: 'none', p: 0 }}></TableCell>
                   <TableCell sx={{ textAlign: 'center', verticalAlign: 'middle', p: 1 }}>
                     <FormControl size="small" sx={{ minWidth: 100 }}>
                       <Select
