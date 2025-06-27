@@ -113,24 +113,31 @@ const generateWorkDetail = (date: Date): WorkDetail | null => {
     const agencyIndex = Math.floor((pseudoRandom * 1000) % agencies.length);
     const managerIndex = Math.floor((pseudoRandom * 10000) % managers.length);
     
-    // 80%の確率で確定、20%で現場未確定
-    const isConfirmed = pseudoRandom > 0.2;
+    // ステータス決定: 50%確定、30%詳細未確定、20%現場未確定
+    let status: '確定' | '詳細未確定' | '現場未確定';
+    if (pseudoRandom < 0.5) {
+      status = '確定';
+    } else if (pseudoRandom < 0.8) {
+      status = '詳細未確定';
+    } else {
+      status = '現場未確定';
+    }
     
     return {
       date: dateStr,
       dayOfWeek,
-      status: isConfirmed ? '確定' : '現場未確定',
+      status,
       agency: agencies[agencyIndex],
-      location: isConfirmed ? locations[locationIndex] : undefined,
-      startTime: isWeekend ? '10:00' : '11:00',
-      endTime: isWeekend ? '18:00' : '19:00',
+      location: status !== '現場未確定' ? locations[locationIndex] : undefined,
+      startTime: status === '確定' ? (isWeekend ? '10:00' : '11:00') : undefined,
+      endTime: status === '確定' ? (isWeekend ? '18:00' : '19:00') : undefined,
       rate: isWeekend ? 18000 : 15000,
       managerName: managers[managerIndex],
       managerPhone: phones[managerIndex],
-      meetingTime: isConfirmed ? (isWeekend ? '09:30' : '10:30') : undefined,
-      meetingPlace: isConfirmed ? '現地集合' : undefined,
-      uniform: isConfirmed ? 'スーツ着用' : undefined,
-      notes: isConfirmed ? '笑顔で接客をお願いします' : '詳細は後日連絡いたします',
+      meetingTime: status === '確定' ? (isWeekend ? '09:30' : '10:30') : undefined,
+      meetingPlace: status === '確定' ? '現地集合' : undefined,
+      uniform: status === '確定' ? 'スーツ着用' : undefined,
+      notes: status === '確定' ? '笑顔で接客をお願いします' : '詳細は後日連絡いたします',
       communications: []
     };
   }
@@ -404,7 +411,7 @@ export default function StaffDashboardPage() {
             </Box>
           </Box>
 
-          {/* 下部：詳細情報（勤務がある場合のみ） */}
+          {/* 下部：詳細情報（ステータス別） */}
           {work.status === '確定' && (
             <Box sx={{ pt: 0.2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 0.3, pb: 0 }}>
               {/* 左下：勤務情報まとめて表示 */}
@@ -432,7 +439,7 @@ export default function StaffDashboardPage() {
           )}
           {work.status === '詳細未確定' && (
             <Box sx={{ pt: 0.2, display: 'flex', alignItems: 'flex-start', gap: 0.3 }}>
-              {/* 左下：勤務場所のみ */}
+              {/* 詳細未確定：勤務場所のみ表示 */}
               <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.1 }}>
                 <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'text.secondary' }}>
                   勤務場所：<span style={{ color: '#222' }}>{work.location || '未定'}</span>
@@ -440,6 +447,7 @@ export default function StaffDashboardPage() {
               </Box>
             </Box>
           )}
+          {/* 現場未確定と休みは表示なし */}
         </CardContent>
       </Card>
     );
