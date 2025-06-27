@@ -8,7 +8,7 @@ import {
 import { 
   CalendarToday, Schedule, LocationOn, Person, Logout, 
   EditCalendar, CheckCircle, Work, Phone, AccessTime, Cancel, Remove, HelpOutline,
-  WorkOutline
+  WorkOutline, Refresh
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import WorkDetailDrawer from '../../../../components/shifts/WorkDetailDrawer';
@@ -82,18 +82,18 @@ const formatDate = (date: Date): string => {
 };
 
 // ダミーデータ生成関数
-const generateWorkDetail = (date: Date): WorkDetail | null => {
+const generateWorkDetail = (date: Date, refreshKey: number = 0): WorkDetail | null => {
   const dateStr = date.toISOString().split('T')[0];
   const dayOfWeek = getDayOfWeekJP(date);
   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
   
-  // 決定論的な疑似ランダム（日付ベース）
-  const seed = date.getDate() + date.getMonth() * 31;
+  // 決定論的な疑似ランダム（日付＋リフレッシュキーベース）
+  const seed = date.getDate() + date.getMonth() * 31 + refreshKey;
   const random = Math.sin(seed) * 10000;
   const pseudoRandom = random - Math.floor(random);
   
-  // 70%の確率で稼働あり
-  if (pseudoRandom < 0.7) {
+  // 75%の確率で稼働あり（25%は休み）
+  if (pseudoRandom < 0.75) {
     const locations = [
       'イオンモール春日部 風の広場',
       'ららぽーと富士見 1階スリコ前',
@@ -113,11 +113,12 @@ const generateWorkDetail = (date: Date): WorkDetail | null => {
     const agencyIndex = Math.floor((pseudoRandom * 1000) % agencies.length);
     const managerIndex = Math.floor((pseudoRandom * 10000) % managers.length);
     
-    // ステータス決定: 50%確定、30%詳細未確定、20%現場未確定
+    // ステータス決定: 確定33%、詳細未確定33%、現場未確定33%
     let status: '確定' | '詳細未確定' | '現場未確定';
-    if (pseudoRandom < 0.5) {
+    const statusRandom = (pseudoRandom * 3) % 1; // 0-1の範囲で3等分
+    if (statusRandom < 0.33) {
       status = '確定';
-    } else if (pseudoRandom < 0.8) {
+    } else if (statusRandom < 0.66) {
       status = '詳細未確定';
     } else {
       status = '現場未確定';
@@ -181,6 +182,7 @@ export default function StaffDashboardPage() {
   const [currentUser, setCurrentUser] = useState<{id: string, name: string} | null>(null);
   const [selectedWorkDetail, setSelectedWorkDetail] = useState<DrawerWorkDetail | null>(null);
   const [isWorkDetailOpen, setIsWorkDetailOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   // 認証チェック
   useEffect(() => {
@@ -204,30 +206,14 @@ export default function StaffDashboardPage() {
     return date;
   }, []);
 
-  // 稼働詳細データ
+  // 稼働詳細データ（リフレッシュキーで再生成）
   const todayWork = useMemo(() => {
-    const work = generateWorkDetail(today);
-    if (work && work.status !== '休み') {
-      // 今日は常に確定にする
-      return {
-        ...work,
-        status: '確定' as const
-      };
-    }
-    return work;
-  }, [today]);
+    return generateWorkDetail(today, refreshKey);
+  }, [today, refreshKey]);
   
   const tomorrowWork = useMemo(() => {
-    const work = generateWorkDetail(tomorrow);
-    if (work && work.status !== '休み') {
-      // 明日は常に詳細未確定にする
-      return {
-        ...work,
-        status: '現場未確定' as const
-      };
-    }
-    return work;
-  }, [tomorrow]);
+    return generateWorkDetail(tomorrow, refreshKey + 1); // 少し異なるシードで生成
+  }, [tomorrow, refreshKey]);
 
   // ログアウト処理
   const handleLogout = () => {
@@ -236,6 +222,11 @@ export default function StaffDashboardPage() {
     localStorage.removeItem('current_staff_name');
     localStorage.removeItem('login_time');
     router.push('/tier-2dealer/staff/login');
+  };
+
+  // リフレッシュ処理
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
   };
 
   // WorkDetailをDrawerWorkDetailに変換（checkページと同じ仕様）
@@ -469,6 +460,29 @@ export default function StaffDashboardPage() {
       />
 
       <Container maxWidth="md" sx={{ py: 0.5 }}>
+        {/* リフレッシュボタン（開発者用） */}
+        <Box sx={{ mb: 1, textAlign: 'center' }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Refresh />}
+            onClick={handleRefresh}
+            sx={{ 
+              fontSize: '0.7rem',
+              py: 0.5,
+              px: 1.5,
+              borderColor: '#999',
+              color: '#666',
+              '&:hover': { 
+                borderColor: '#666',
+                backgroundColor: '#f5f5f5'
+              }
+            }}
+          >
+            ステータス再生成（開発用）
+          </Button>
+        </Box>
+
         {/* 稼働詳細セクション */}
         <Box sx={{ mb: 1.2 }}>
           <Grid container spacing={1}>
