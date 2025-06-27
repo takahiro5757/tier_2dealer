@@ -99,15 +99,15 @@ export default function StaffInputPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isLoggedIn = safeGetLocalStorage('staff_logged_in');
-      const userId = safeGetLocalStorage('user_id');
-      const userName = safeGetLocalStorage('user_name');
+      const userId = safeGetLocalStorage('current_staff_id');
+      const userName = safeGetLocalStorage('current_staff_name');
       
       if (!isLoggedIn || !userId) {
         safeSetLocalStorage('staff_logged_in', 'true');
-        safeSetLocalStorage('user_id', '1205000011');
-        safeSetLocalStorage('user_name', '佐藤孝郁');
-        setCurrentUserId('1205000011');
-        setCurrentUserName('佐藤孝郁');
+        safeSetLocalStorage('current_staff_id', 'staff001');
+        safeSetLocalStorage('current_staff_name', '田中太郎');
+        setCurrentUserId('staff001');
+        setCurrentUserName('田中太郎');
         setIsLoggedIn(true);
       } else {
         setCurrentUserId(userId);
