@@ -13,7 +13,7 @@ import DateRow from './components/DateRow';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import LocationCell from './components/LocationCell';
-import RequestCell from './components/RequestCell';
+import RequestCell, { RequestCellProps } from './components/RequestCell';
 import StatusCell from './components/StatusCell';
 import CommentCell from './components/CommentCell';
 
@@ -2055,14 +2055,16 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
             {infoRowExpanded('要望', m => {
               const req = staffRequests.find(req => req.id === m.id);
               
+              const requestCellProps: RequestCellProps = {
+                staffId: m.id,
+                request: req,
+                isReadOnly: isReadOnly,
+                requestCellReadOnly: requestCellReadOnly,
+                onRequestTextChange: handleRequestTextChange
+              };
+              
               return (
-                <RequestCell 
-                  staffId={m.id}
-                  request={req}
-                  isReadOnly={isReadOnly}
-                  requestCellReadOnly={requestCellReadOnly}
-                  onRequestTextChange={handleRequestTextChange}
-                />
+                <RequestCell {...requestCellProps} />
               );
             })}
 

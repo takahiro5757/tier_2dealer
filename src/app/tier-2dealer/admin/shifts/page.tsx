@@ -850,7 +850,7 @@ export default function AdminShiftsPage() {
       const changeRequestId = `cr-${currentYear}${currentMonth.padStart(2, '0')}-${Date.now()}`;
       const totalChanges = changedStaffs.reduce((sum, staff) => sum + staff.changes.length, 0);
       
-      // 要望データの変更も含める（要望テキスト、平日希望数、土日希望数）
+                             // 要望データの変更も含める（要望テキスト）
       const originalRequests = backupRequests;
       tempRequests.forEach(tempRequest => {
         const originalRequest = originalRequests.find(r => r.id === tempRequest.id);
@@ -870,27 +870,8 @@ export default function AdminShiftsPage() {
           });
         }
         
-        // 平日希望数の変更
-        const originalTotalRequest = originalRequest?.totalRequest || 20;
-        if (originalTotalRequest !== tempRequest.totalRequest) {
-          requestChanges.push({
-            date: '',
-            field: 'totalRequest' as const,
-            oldValue: originalTotalRequest.toString(),
-            newValue: tempRequest.totalRequest.toString()
-          });
-        }
-        
-        // 土日希望数の変更
-        const originalWeekendRequest = originalRequest?.weekendRequest || 5;
-        if (originalWeekendRequest !== tempRequest.weekendRequest) {
-          requestChanges.push({
-            date: '',
-            field: 'weekendRequest' as const,
-            oldValue: originalWeekendRequest.toString(),
-            newValue: tempRequest.weekendRequest.toString()
-          });
-        }
+
+
         
         if (requestChanges.length > 0) {
           const existingStaff = changedStaffs.find(s => s.staffId === tempRequest.id);
@@ -1056,13 +1037,21 @@ export default function AdminShiftsPage() {
       const updatedRequests = [...currentRequests];
       const existingIndex = updatedRequests.findIndex(r => r.id === staffId);
       
+      // 数値の場合はtotalRequestも更新
+      const numValue = parseInt(text);
+      const isNumeric = !isNaN(numValue) && numValue > 0;
+      
       if (existingIndex >= 0) {
-        updatedRequests[existingIndex] = { ...updatedRequests[existingIndex], requestText: text };
+        updatedRequests[existingIndex] = { 
+          ...updatedRequests[existingIndex], 
+          requestText: text,
+          ...(isNumeric && { totalRequest: numValue })
+        };
       } else {
         updatedRequests.push({
           id: staffId,
-          totalRequest: 20,
-          weekendRequest: 5,
+          totalRequest: isNumeric ? numValue : 15,
+          weekendRequest: 0,
           company: '',
           requestText: text
         });
@@ -1073,7 +1062,7 @@ export default function AdminShiftsPage() {
       // 強制的に再レンダリングを発生させるため、isDataInitializedを切り替え
       setIsDataInitialized(prev => !prev);
       
-      console.log(`[DirectEdit] 要望テキスト更新: ${staffId} → ${text}`);
+      console.log(`[DirectEdit] 要望テキスト更新: ${staffId} → ${text}${isNumeric ? ` (totalRequest: ${numValue})` : ''}`);
       return;
     }
     
@@ -1084,19 +1073,27 @@ export default function AdminShiftsPage() {
       const updatedRequests = [...prevRequests];
       const existingIndex = updatedRequests.findIndex(r => r.id === staffId);
       
+      // 数値の場合はtotalRequestも更新
+      const numValue = parseInt(text);
+      const isNumeric = !isNaN(numValue) && numValue > 0;
+      
       if (existingIndex >= 0) {
-        updatedRequests[existingIndex] = { ...updatedRequests[existingIndex], requestText: text };
+        updatedRequests[existingIndex] = { 
+          ...updatedRequests[existingIndex], 
+          requestText: text,
+          ...(isNumeric && { totalRequest: numValue })
+        };
       } else {
         updatedRequests.push({
           id: staffId,
-          totalRequest: 20,
-          weekendRequest: 5,
+          totalRequest: isNumeric ? numValue : 15,
+          weekendRequest: 0,
           company: '',
           requestText: text
         });
       }
       
-      console.log(`[TempData] 要望テキスト更新: ${staffId} → ${text}`);
+      console.log(`[TempData] 要望テキスト更新: ${staffId} → ${text}${isNumeric ? ` (totalRequest: ${numValue})` : ''}`);
       return updatedRequests;
     });
   };
@@ -1116,10 +1113,10 @@ export default function AdminShiftsPage() {
       } else {
         updatedRequests.push({
           id: staffId,
-          totalRequest: field === 'totalRequest' ? value : 20,
-          weekendRequest: field === 'weekendRequest' ? value : 5,
+          totalRequest: field === 'totalRequest' ? value : 15,
+          weekendRequest: field === 'weekendRequest' ? value : 0,
           company: '',
-          requestText: ''
+          requestText: value.toString()
         });
       }
       
@@ -1144,10 +1141,10 @@ export default function AdminShiftsPage() {
       } else {
         updatedRequests.push({
           id: staffId,
-          totalRequest: field === 'totalRequest' ? value : 20,
-          weekendRequest: field === 'weekendRequest' ? value : 5,
+          totalRequest: field === 'totalRequest' ? value : 15,
+          weekendRequest: field === 'weekendRequest' ? value : 0,
           company: '',
-          requestText: ''
+          requestText: value.toString()
         });
       }
       
@@ -1236,24 +1233,31 @@ export default function AdminShiftsPage() {
     const store = useShiftStore.getState();
     const originalRequests = store.getStaffRequests(currentYear, currentMonth) || [];
     
+    console.log(`[getMergedRequests] isInEditMode=${isInEditMode}, originalRequests.length=${originalRequests.length}, tempRequests.length=${tempRequests.length}`);
+    
     if (!isInEditMode) {
+      console.log(`[getMergedRequests] 編集モードでない、元データを返す`);
       return originalRequests; // 編集モードでない場合は元データをそのまま返す
     }
     
     const mergedRequests = [...originalRequests];
+    console.log(`[getMergedRequests] マージ前:`, mergedRequests.slice(0, 3).map(r => ({ id: r.id, requestText: r.requestText, totalRequest: r.totalRequest })));
     
     tempRequests.forEach(tempRequest => {
       const existingIndex = mergedRequests.findIndex(r => r.id === tempRequest.id);
       
       if (existingIndex >= 0) {
         // 既存データを一時データで上書き
+        console.log(`[getMergedRequests] 上書き: ${tempRequest.id}, 元:`, mergedRequests[existingIndex], ' 一時:', tempRequest);
         mergedRequests[existingIndex] = { ...mergedRequests[existingIndex], ...tempRequest };
       } else {
         // 新規データを追加
+        console.log(`[getMergedRequests] 新規追加: ${tempRequest.id}`, tempRequest);
         mergedRequests.push(tempRequest);
       }
     });
     
+    console.log(`[getMergedRequests] マージ後:`, mergedRequests.slice(0, 3).map(r => ({ id: r.id, requestText: r.requestText, totalRequest: r.totalRequest })));
     return mergedRequests;
   };
 
@@ -1357,27 +1361,7 @@ export default function AdminShiftsPage() {
         });
       }
 
-      // 平日希望数の変更
-      const originalTotalRequest = originalRequest?.totalRequest || 20;
-      if (originalTotalRequest !== tempRequest.totalRequest) {
-        requestChanges.push({
-          field: 'totalRequest',
-          fieldLabel: '平日希望数',
-          oldValue: originalTotalRequest.toString(),
-          newValue: tempRequest.totalRequest.toString()
-        });
-      }
 
-      // 土日希望数の変更
-      const originalWeekendRequest = originalRequest?.weekendRequest || 5;
-      if (originalWeekendRequest !== tempRequest.weekendRequest) {
-        requestChanges.push({
-          field: 'weekendRequest',
-          fieldLabel: '土日希望数',
-          oldValue: originalWeekendRequest.toString(),
-          newValue: tempRequest.weekendRequest.toString()
-        });
-      }
 
       if (requestChanges.length > 0) {
         changes.requestChanges.push({
@@ -1582,12 +1566,14 @@ export default function AdminShiftsPage() {
     ));
   }
 
+
+
   return (
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       {/* AdminHeader */}
       <AdminHeader onExcelExport={handleExcelExportFromMenu} />
 
-      <Container maxWidth={false} sx={{ py: 3, px: 2 }}>
+      <Container maxWidth={false} sx={{ py: 1, px: 1 }}>
         {message && (
           <Alert severity="success" sx={{ mb: 3 }}>
             {message}
@@ -1595,7 +1581,7 @@ export default function AdminShiftsPage() {
         )}
 
         {/* 年月選択、スタッフ提出状況、システム連携状態 */}
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper sx={{ p: 2, mb: 1 }}>
           <Grid container spacing={3} alignItems="center">
             {/* 年月選択 */}
             <Grid item>
@@ -1730,7 +1716,10 @@ export default function AdminShiftsPage() {
         </Paper>
 
         {/* シフト表 */}
-        <Paper sx={{ mb: 3, width: '100%', overflow: 'hidden' }}>
+        <Paper sx={{ mb: 1, width: '100%', overflow: 'hidden' }}>
+          <Paper sx={{ p: 1 }}>
+
+            
           <SpreadsheetGrid
             staffMembers={staffMembers}
             shifts={getMergedShifts()}
@@ -1739,14 +1728,15 @@ export default function AdminShiftsPage() {
             month={month}
             hideCaseColumns={true}
             isReadOnly={isSubmitted && !isInEditMode} // 提出前は編集可、提出後は編集モード時のみ編集可
-            onStatusChange={!isSubmitted || isInEditMode ? handleStatusChange as any : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
+              onStatusChange={!isSubmitted || isInEditMode ? handleStatusChange as any : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
             onRequestTextChange={!isSubmitted || isInEditMode ? handleRequestTextChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
             onRequestChange={!isSubmitted || isInEditMode ? handleRequestChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
-            onCommentChange={handleCommentChange} // コメントは常時編集可能
+              onCommentChange={handleCommentChange} // コメントは常時編集可能
             onRateChange={undefined}
             disableDoubleClick={true}
-            requestCellReadOnly={isSubmitted && !isInEditMode} // 提出前は編集可、提出後は編集モード時のみ編集可
+              requestCellReadOnly={false} // 要望セルは常に編集可能（編集モード時の制御はonRequestTextChangeで行う）
           />
+          </Paper>
         </Paper>
 
 

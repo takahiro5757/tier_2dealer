@@ -494,6 +494,10 @@ const DateRow: React.FC<DateRowProps> = ({
               isWeekend={isWeekend}
               disableDoubleClick={disableDoubleClick}
               isReadOnly={isReadOnly}
+              getLocation={(staffId: string, date: Date) => {
+                const shift = getShift(date, staffId);
+                return shift?.location || '';
+              }}
             />
             
             <RateCell 

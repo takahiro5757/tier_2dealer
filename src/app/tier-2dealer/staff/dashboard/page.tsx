@@ -409,23 +409,23 @@ export default function StaffDashboardPage() {
               <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.3, pb: 0 }}>
                 <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'text.secondary', mb: 0 }}>
                   勤務場所：<span style={{ color: '#222' }}>{work.location || '未定'}</span>
-                </Typography>
+                  </Typography>
                 <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'text.secondary', mb: 0 }}>
                   勤務時間：<span style={{ color: '#222' }}>{work.startTime && work.endTime ? `${work.startTime}-${work.endTime}` : '未定'}</span>
-                </Typography>
+                  </Typography>
                 <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'text.secondary', mb: 0 }}>
                   集　　合：<span style={{ color: '#222' }}>{(work.meetingTime || work.meetingPlace) ? `${work.meetingTime || ''} ${work.meetingPlace || ''}`.trim() : '未定'}</span>
-                </Typography>
-              </Box>
+                  </Typography>
+                </Box>
               {/* 右端：詳細タップ */}
               <Box sx={{ textAlign: 'right', minWidth: 'fit-content', pb: 0 }}>
                 <Typography variant="body2" color="primary" sx={{ fontSize: '0.7rem', fontWeight: 'bold', mb: 0 }}>
-                  詳細
-                </Typography>
+                        詳細
+                      </Typography>
                 <Typography variant="body2" sx={{ fontSize: '0.65rem', color: 'text.secondary', mb: 0 }}>
-                  タップ
-                </Typography>
-              </Box>
+                        タップ
+                      </Typography>
+                    </Box>
             </Box>
           )}
           {work.status === '詳細未確定' && (

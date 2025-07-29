@@ -169,20 +169,20 @@ export default function StaffHeader({
           {/* ユーザー情報 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: isMobile ? 0.5 : 1 }}>
             {/* ユーザー名 - モバイルでも表示 */}
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: 'white', 
-                fontWeight: 500,
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: 'white', 
+                  fontWeight: 500,
                 fontSize: isMobile ? '0.7rem' : isTablet ? '0.75rem' : '0.875rem',
                 maxWidth: isMobile ? '80px' : 'none',
                 overflow: isMobile ? 'hidden' : 'visible',
                 textOverflow: isMobile ? 'ellipsis' : 'clip',
                 whiteSpace: isMobile ? 'nowrap' : 'normal'
-              }}
-            >
-              {userName}
-            </Typography>
+                }}
+              >
+                {userName}
+              </Typography>
           </Box>
 
           {/* ログアウトボタン - モバイルではアイコンのみ */}

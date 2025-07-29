@@ -35,7 +35,10 @@ import {
   AttachMoney,
   ExpandMore,
   ExpandLess,
-  Chat
+  Chat,
+  Room as PlaceReservationIcon,
+  Business as ExternalSiteIcon,
+  Flag as BusinessTripIcon
 } from '@mui/icons-material';
 import CommunicationPanel from '../sales/CommunicationPanel';
 
@@ -74,6 +77,13 @@ interface StaffMember {
   company: string;
 }
 
+// フラグの型定義を追加
+interface WorkFlags {
+  placeReservation: boolean; // 場所取り
+  externalSite: boolean;     // 外現場
+  businessTrip: boolean;     // 出張
+}
+
 interface WorkDetailDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -108,6 +118,13 @@ const WorkDetailDrawer: React.FC<WorkDetailDrawerProps> = ({
     target: '新規顧客獲得20件',
     specialNotes: '雨天時は屋内での活動に変更',
     communications: [] as Communication[]
+  });
+
+  // フラグの状態を追加
+  const [workFlags, setWorkFlags] = useState<WorkFlags>({
+    placeReservation: true,  // 場所取り（サンプルとしてアクティブ）
+    externalSite: false,     // 外現場（サンプルとして非アクティブ）
+    businessTrip: true       // 出張（サンプルとしてアクティブ）
   });
 
   // 複数日のデータを生成（サンプル）
@@ -369,6 +386,60 @@ const WorkDetailDrawer: React.FC<WorkDetailDrawerProps> = ({
                 workDetails.location
               )}
             </Typography>
+
+            {/* フラグ表示エリア */}
+            <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <PlaceReservationIcon sx={{ 
+                  fontSize: '1rem', 
+                  color: workFlags.placeReservation ? '#4caf50' : '#9e9e9e' 
+                }} />
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: workFlags.placeReservation ? '#4caf50' : '#9e9e9e',
+                    fontWeight: 'bold',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  場所取り
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <ExternalSiteIcon sx={{ 
+                  fontSize: '1rem', 
+                  color: workFlags.externalSite ? '#4caf50' : '#9e9e9e' 
+                }} />
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: workFlags.externalSite ? '#4caf50' : '#9e9e9e',
+                    fontWeight: 'bold',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  外現場
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <BusinessTripIcon sx={{ 
+                  fontSize: '1rem', 
+                  color: workFlags.businessTrip ? '#4caf50' : '#9e9e9e' 
+                }} />
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: workFlags.businessTrip ? '#4caf50' : '#9e9e9e',
+                    fontWeight: 'bold',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  出張
+                </Typography>
+              </Box>
+            </Box>
             
             {/* 開催・連名 */}
             <Box sx={{ mb: 2 }}>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Box, 
   TextField, 
@@ -9,220 +9,213 @@ import {
 } from '@mui/material';
 import { StaffRequest } from '../types';
 
-const RequestCellContainer = styled(Box)(({ theme }) => ({
+const RequestCellContainer = styled(Box)<{ backgroundColor?: string }>(({ backgroundColor }) => ({
   display: 'flex',
-  flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '100% !important',
-  height: 'auto',
-  padding: theme.spacing(0.25),
-  background: '#f3e5f5',
+  width: '100%',
+  height: '36px',
+  padding: '4px',
+  background: backgroundColor || '#f3e5f5',
   borderTop: '2px solid #000000',
   color: '#9c27b0',
-  minHeight: '36px',
-  maxWidth: '100% !important',
-  minWidth: '100% !important',
-  overflow: 'hidden',
-  cursor: 'pointer',
-  flex: 'none !important',
-  boxSizing: 'border-box'
-}));
-
-const RequestText = styled(Typography)(({ theme }) => ({
-  fontSize: '0.7rem',
-  fontWeight: 'bold',
-  textAlign: 'center',
-  color: '#9c27b0',
-  userSelect: 'none',
-  lineHeight: 1.1,
-  wordBreak: 'break-word',
-  padding: 0,
-  width: '100% !important',
-  maxWidth: '100% !important',
-  overflow: 'hidden',
-  whiteSpace: 'pre-wrap',
-  flex: 'none !important',
-  boxSizing: 'border-box'
-}));
-
-const EditTextField = styled(TextField)(({ theme }) => ({
-  width: '100% !important',
-  maxWidth: '100% !important',
-  flex: 'none !important',
-  '& .MuiInputBase-root': {
-    fontSize: '0.65rem',
-    color: '#9c27b0',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: '4px',
-    minHeight: 'auto',
-    width: '100% !important',
-    flex: 'none !important',
-  },
-  '& .MuiInputBase-input': {
-    padding: theme.spacing(0.2),
-    textAlign: 'center',
-    fontSize: '0.65rem',
-    lineHeight: 1.1,
-    width: '100% !important',
-    boxSizing: 'border-box',
-    flex: 'none !important',
-  },
-  '& .MuiOutlinedInput-notchedOutline': {
-    borderColor: '#9c27b0',
-  },
-  '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-    borderColor: '#9c27b0',
-  },
-  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-    borderColor: '#9c27b0',
-  }
+  border: '2px solid transparent',
+  position: 'relative',
 }));
 
 interface RequestCellProps {
   staffId: string;
   request?: StaffRequest;
   isReadOnly?: boolean;
+  requestCellReadOnly?: boolean;
   onRequestTextChange?: (staffId: string, text: string) => void;
 }
+
+export type { RequestCellProps };
 
 const RequestCell: React.FC<RequestCellProps> = ({
   staffId,
   request,
   isReadOnly = false,
+  requestCellReadOnly = false,
   onRequestTextChange
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState('');
-  const textFieldRef = useRef<HTMLInputElement>(null);
+  const [editValue, setEditValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // 表示用のテキストを生成
-  const getDisplayText = () => {
-    // requestがundefinedの場合のデフォルト表示
-    if (!request) {
-      return '20（土日5）';
+  // 表示する値を取得
+  const getDisplayValue = (): string => {
+    if (!request) return '15';
+    
+    // 古い文字列データを検出
+    const oldTextValues = ['平日希望', '土日出勤可能', '夜勤希望', '短時間勤務希望', '連勤可能', '早番希望', '遅番希望', '週末のみ', '平日のみ', '時短勤務', '残業可能', '急な出勤対応可'];
+    if (request.requestText && oldTextValues.includes(request.requestText)) {
+      // 古いデータの場合は15を返し、自動更新
+      if (onRequestTextChange) {
+        setTimeout(() => {
+          onRequestTextChange(staffId, '15');
+        }, 100);
+      }
+      return '15';
     }
     
-    // カスタムテキストがある場合はそれのみを表示
-    if (request.requestText && request.requestText.trim()) {
-      return request.requestText;
+    // 数値の場合
+    if (request.requestText && /^\d+$/.test(request.requestText)) {
+      const num = parseInt(request.requestText);
+      if (!isNaN(num) && num > 0) {
+        return num.toString();
+      }
     }
     
-    // カスタムテキストがない場合のみ数値表示
-    const total = request.totalRequest || 20; // デフォルト値を20に変更
-    const weekend = request.weekendRequest || 5; // デフォルト値を5に設定
-    
-    if (weekend > 0) {
-      return `${total}（土日${weekend}）`;
-    } else if (total > 0) {
-      return `${total}`;
-    } else {
-      return '20（土日5）'; // 完全なデフォルト表示
+    // totalRequestから取得
+    if (request.totalRequest && request.totalRequest > 0) {
+      return request.totalRequest.toString();
     }
+    
+    return '15';
   };
 
-  const handleCellClick = (event: React.MouseEvent) => {
-    if (isReadOnly || isEditing) return;
-    
-    event.stopPropagation();
-    setEditText(request?.requestText || '');
+  // 編集可能かどうかを判定
+  const canEdit = () => {
+    // onRequestTextChangeが提供されている場合のみ編集可能（これがシフト変更操作時の条件）
+    return !isReadOnly && !requestCellReadOnly && !!onRequestTextChange;
+  };
+
+  // クリックハンドラー
+  const handleClick = () => {
+    if (!canEdit()) {
+      return;
+    }
+
+    const currentValue = getDisplayValue();
+    setEditValue(currentValue);
     setIsEditing(true);
+
+    // 次のレンダリング後にフォーカスとselect
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        // selectRangeを使用してエラーを回避
+        if (inputRef.current.setSelectionRange) {
+          inputRef.current.setSelectionRange(0, inputRef.current.value.length);
+        }
+      }
+    }, 0);
   };
 
+  // 保存処理
   const handleSave = () => {
-    if (onRequestTextChange) {
-      onRequestTextChange(staffId, editText);
+    const numValue = parseInt(editValue);
+    let finalValue = '15';
+
+    if (!isNaN(numValue) && numValue > 0) {
+      finalValue = numValue.toString();
     }
+
+    if (onRequestTextChange) {
+      onRequestTextChange(staffId, finalValue);
+    }
+
     setIsEditing(false);
+    setEditValue('');
   };
 
+  // キャンセル処理
   const handleCancel = () => {
-    setEditText(request?.requestText || '');
     setIsEditing(false);
+    setEditValue('');
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
+  // キー入力処理
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
       handleSave();
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
       handleCancel();
     }
   };
 
-  const handleBlur = (event: React.FocusEvent) => {
-    // 少し遅延させて確実にBlurイベントを処理
-    setTimeout(() => {
-      handleSave();
-    }, 100);
-  };
-
-  const handleTextFieldClick = (event: React.MouseEvent) => {
-    // テキストフィールド内のクリックは伝播を停止
-    event.stopPropagation();
-  };
-
-  // 編集モードに入ったときにフォーカスを当てる
-  useEffect(() => {
-    if (isEditing && textFieldRef.current) {
-      const input = textFieldRef.current;
-      input.focus();
-      // テキスト全選択
-      setTimeout(() => {
-        if (input.setSelectionRange) {
-          input.setSelectionRange(0, input.value.length);
-        }
-      }, 0);
+  // 入力値の変更処理
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 数字のみ許可
+    if (/^\d*$/.test(value)) {
+      setEditValue(value);
     }
-  }, [isEditing]);
+  };
 
-  // 外部クリックを検知して編集モードを終了
-  useEffect(() => {
-    if (!isEditing) return;
+  // 編集中の場合
+  if (isEditing) {
+    return (
+      <RequestCellContainer backgroundColor="#f3e5f5">
+        <TextField
+          ref={inputRef}
+          value={editValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSave}
+          variant="outlined"
+          size="small"
+          placeholder="整数"
+          inputProps={{
+            style: {
+              textAlign: 'center',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              padding: '4px'
+            },
+            inputMode: 'numeric',
+            pattern: '[0-9]*'
+          }}
+          sx={{
+            width: '60px',
+            '& .MuiOutlinedInput-root': {
+              height: '28px',
+              '& fieldset': {
+                borderColor: '#9c27b0',
+              },
+              '&:hover fieldset': {
+                borderColor: '#9c27b0',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#9c27b0',
+              },
+            },
+          }}
+        />
+      </RequestCellContainer>
+    );
+  }
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (textFieldRef.current && !textFieldRef.current.contains(event.target as Node)) {
-        handleSave();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isEditing, editText]);
-
+  // 表示中の場合
   return (
     <RequestCellContainer 
-      onClick={handleCellClick}
+      backgroundColor="#f3e5f5"
+      onClick={handleClick}
+      data-testid={`request-cell-${staffId}`}
+      title={canEdit() ? `クリックして編集 (現在値: ${getDisplayValue()})` : `読み取り専用 (現在値: ${getDisplayValue()})`}
       sx={{
-        cursor: isReadOnly ? 'default' : 'pointer',
-        '&:hover': isReadOnly ? {} : {
-          backgroundColor: '#f8e5fa',
-        }
+        cursor: canEdit() ? 'pointer' : 'default',
+        '&:hover': canEdit() ? {
+          backgroundColor: '#e1bee7',
+          border: '2px solid #9c27b0',
+        } : {}
       }}
     >
-      {isEditing ? (
-        <EditTextField
-          ref={textFieldRef}
-          size="small"
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          onKeyDown={handleKeyPress}
-          onBlur={handleBlur}
-          onClick={handleTextFieldClick}
-          placeholder="要望を入力..."
-          variant="outlined"
-          multiline
-          maxRows={2}
-          minRows={1}
-        />
-      ) : (
-        <RequestText>
-          {getDisplayText()}
-        </RequestText>
-      )}
+      <Typography
+        variant="body2"
+        sx={{
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: '#9c27b0',
+          userSelect: 'none'
+        }}
+      >
+        {getDisplayValue()}
+      </Typography>
     </RequestCellContainer>
   );
 };

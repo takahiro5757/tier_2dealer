@@ -35,6 +35,7 @@ interface StatusCellProps {
   isWeekend: boolean;
   disableDoubleClick?: boolean; // ダブルクリック機能を無効にするオプション
   isReadOnly?: boolean; // 読み取り専用モード
+  getLocation?: (staffId: string, date: Date) => string; // 場所取得関数を追加
 }
 
 // 履歴表示用のカスタムツールチップ内容
@@ -111,24 +112,42 @@ const HistoryTooltipContent: React.FC<HistoryTooltipContentProps> = ({ history }
   );
 };
 
-const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disableDoubleClick, isReadOnly }) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [isHighlighted, setIsHighlighted] = useState<boolean>(false);
-  const { 
-    getStatus, 
-    isStatusChanged, 
-    updateStatus,
-    getStatusHistory
-  } = useShiftContext();
+const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disableDoubleClick, isReadOnly, getLocation }) => {
+  const { getStatus, updateStatus, getStatusHistory } = useShiftContext();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const lastClickTime = useRef<number>(0);
+
+  const currentStatus = getStatus(staffId, date);
   
-  const status = getStatus(staffId, date);
-  const statusChanged = isStatusChanged(staffId, date);
-  const statusHistory = getStatusHistory(staffId, date);
-  const isMenuOpen = Boolean(anchorEl);
+  // 背景色を判定する関数
+  const getCellBackgroundColor = (): string => {
+    // ○かつ稼働場所が空白ではない場合は黄色
+    if (currentStatus === '○' && getLocation) {
+      const location = getLocation(staffId, date);
+      if (location && location.trim() !== '') {
+        return '#ffff80'; // 薄い黄色の背景
+      }
+    }
+    
+    // △の場合は赤色
+    if (currentStatus === '△') {
+      return '#ff9999'; // 薄い赤色の背景
+    }
+    
+    // 土日の場合
+    if (isWeekend) return '#ffdbac';
+    
+    // ○の場合は白
+    if (currentStatus === '○') {
+      return '#ffffff';
+    }
+    
+    return ''; // デフォルト（透明）
+  };
 
   // メニューが開いている時の外部クリック検出
   useEffect(() => {
-    if (isMenuOpen) {
+    if (Boolean(anchorEl)) {
       const handleDocumentClick = (event: MouseEvent) => {
         if (anchorEl && !anchorEl.contains(event.target as Node)) {
           setAnchorEl(null);
@@ -145,7 +164,7 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
         document.removeEventListener('click', handleDocumentClick);
       };
     }
-  }, [isMenuOpen, anchorEl]);
+  }, [anchorEl]);
   
   // メニューを開く
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -157,8 +176,15 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
   const handleDoubleClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     if (isReadOnly) return; // 読み取り専用の場合は何もしない
-    if (status === '○' && !disableDoubleClick) {
-      setIsHighlighted(!isHighlighted);
+    if (currentStatus === '○' && !disableDoubleClick) {
+      // ダブルクリックの間隔をチェック
+      const now = Date.now();
+      if (now - lastClickTime.current < 300) { // 300ms以内のクリック
+        // ハイライトを切り替え
+        // ここではisHighlightedを使用していないため、直接currentStatusを変更
+        updateStatus(staffId, date, currentStatus === '○' ? '×' : '○');
+      }
+      lastClickTime.current = now; // クリック時刻を更新
     }
   };
   
@@ -173,41 +199,39 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
     setAnchorEl(null); // 直接nullを設定してメニューを閉じる
     // ○以外を選択した場合はハイライトを解除
     if (newStatus !== '○') {
-      setIsHighlighted(false);
+      // ダブルクリックの間隔をリセット
+      lastClickTime.current = 0;
     }
   };
   
-  // 背景色を決定
-  const getBackgroundColor = () => {
-    // ダブルクリック機能が無効な場合はハイライトを適用しない
-    if (status === '○' && isHighlighted && !disableDoubleClick) {
-      return '#ffd54f'; // ダブルクリックのハイライトを最優先
+
+  
+  // ホバー時の背景色を決定
+  const getHoverBackgroundColor = () => {
+    // ○かつ稼働場所が空白ではない場合は濃い黄色
+    if (currentStatus === '○' && getLocation) {
+      const location = getLocation(staffId, date);
+      if (location && location.trim() !== '') {
+        return '#ffff4d'; // 少し濃い薄い黄色のホバー
+      }
     }
-    // 土日の背景色を次に優先
-    if (isWeekend) return '#ffdbac';
-    if (status === '○') {
-      return '#ffffff'; // 通常時は白
+    
+    // △の場合は濃い赤色
+    if (currentStatus === '△') {
+      return '#ff6666'; // 少し濃い薄い赤色のホバー
+    }
+    
+    // 土日のホバー色を次に優先
+    if (isWeekend) return '#ffccaa';
+    if (currentStatus === '○') {
+      return '#f5f5f5'; // 通常時は薄いグレー
     }
     return undefined;
   };
   
-  // ホバー時の背景色を決定
-  const getHoverBackgroundColor = () => {
-    // ダブルクリック機能が無効な場合はハイライトを適用しない
-    if (status === '○' && isHighlighted && !disableDoubleClick) {
-      return '#ffca28'; // ダブルクリックのハイライトホバーを最優先
-    }
-    // 土日のホバー色を次に優先
-    if (isWeekend) return '#ffccaa';
-    if (status === '○') {
-      return '#f5f5f5'; // 通常時は薄いグレー
-    }
-    return '#f0f0f0';
-  };
-  
   return (
     <Tooltip
-      title={<HistoryTooltipContent history={statusHistory} />}
+      title={<HistoryTooltipContent history={getStatusHistory(staffId, date)} />}
       placement="right"
       enterDelay={500}
       enterNextDelay={100}
@@ -220,13 +244,13 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
         }
       }}
       disableInteractive={false}
-      disableHoverListener={statusHistory.length === 0} // 履歴がない場合はツールチップを表示しない
+      disableHoverListener={getStatusHistory(staffId, date).length === 0} // 履歴がない場合はツールチップを表示しない
     >
       <Cell 
         onClick={handleClick}
         onDoubleClick={disableDoubleClick ? undefined : handleDoubleClick}
         sx={{
-          backgroundColor: getBackgroundColor(),
+          backgroundColor: getCellBackgroundColor(),
           cursor: isReadOnly ? 'default' : 'pointer',
           '&:hover': isReadOnly ? {} : { 
             backgroundColor: getHoverBackgroundColor(),
@@ -235,12 +259,12 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
           position: 'relative'
         }}
       >
-        {status}
+        {currentStatus}
         
         {/* ステータス選択メニュー */}
         <Menu
           anchorEl={anchorEl}
-          open={isMenuOpen}
+          open={Boolean(anchorEl)}
           onClose={handleClose}
           anchorOrigin={{
             vertical: 'top',
@@ -309,7 +333,7 @@ const StatusCell: React.FC<StatusCellProps> = ({ staffId, date, isWeekend, disab
         </Menu>
         
         {/* 変更履歴がある場合は小さなインジケーターを表示 */}
-        {statusHistory.length > 0 && (
+        {getStatusHistory(staffId, date).length > 0 && (
           <Box 
             sx={{ 
               position: 'absolute',

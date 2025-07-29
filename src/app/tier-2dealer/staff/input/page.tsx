@@ -273,7 +273,7 @@ export default function StaffInputPage() {
       setMessage('ユーザー情報が見つかりません');
       return;
     }
-    
+
     setIsLoading(true);
     
     try {
