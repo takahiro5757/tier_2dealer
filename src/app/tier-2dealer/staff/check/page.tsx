@@ -19,7 +19,7 @@ interface ConfirmedShift {
   date: string;
   staffId: string;
   requestedStatus: '○' | '×' | '△'; // スタッフが希望した記号
-  status: '確定' | '休み' | '現場未確定' | '詳細未確定';
+  status: '確定' | '休み' | '現場未確定' | '詳細未確定' | '-';
   agency?: string;
   location?: string;
   startTime?: string;
@@ -45,7 +45,7 @@ interface WorkDetail {
   date: string;
   dayOfWeek: string;
   requestedStatus: '○' | '×' | '△';
-  status: '確定' | '休み' | '現場未確定' | '詳細未確定';
+  status: '確定' | '休み' | '現場未確定' | '詳細未確定' | '-';
   agency?: string;
   location?: string;
   startTime?: string;
@@ -88,14 +88,27 @@ const getRequestedStatusColor = (status: '○' | '×' | '△') => {
 const getBackgroundColor = (status: string, day: number) => {
   if (status === '確定') return '#e7f5e0'; // 薄い緑（確定）
   if (status === '休み') return '#f5f5f5'; // 薄いグレー（休み）
+  if (status === '-') return '#ffffff'; // 白（調整中）
   
-  // 稼働が確約されている日（後半の数箇所を緑色にする）
+  // 詳細未定は常に緑背景
+  if (status === '詳細未確定') return '#e7f5e0'; // 薄い緑（詳細未定）
+  
+  // 現場未定の一部を緑背景にする（稼働確約されている日）
   // 月の後半（15日以降）で特定の日を緑色にする
-  if (day >= 15 && (day % 4 === 0 || day === 18 || day === 25)) {
+  if (status === '現場未確定' && day >= 15 && (day % 4 === 0 || day === 18 || day === 25)) {
     return '#e7f5e0'; // 薄い緑（稼働確約）
   }
   
   return '#ffffff'; // 白
+};
+
+// 枠線スタイルを取得する関数（緑背景のカードに緑枠線を追加）
+const getBorderStyle = (status: string, day: number) => {
+  const backgroundColor = getBackgroundColor(status, day);
+  if (backgroundColor === '#e7f5e0') {
+    return '2px solid #4caf50'; // 緑の枠線
+  }
+  return 'none';
 };
 
 // 2次店スタッフのダミーデータ
@@ -216,7 +229,7 @@ const generateConfirmedShifts = (year: number, month: number, staffId: string): 
     const requestedStatus = requestedStatusArray[day - 1];
     
     // 希望に基づいて確定結果を決定
-    let status: '確定' | '休み' | '現場未確定' | '詳細未確定' = '休み'; // デフォルト値を設定
+    let status: '確定' | '休み' | '現場未確定' | '詳細未確定' | '-' = '休み'; // デフォルト値を設定
     let location = undefined;
     let startTime = undefined;
     let endTime = undefined;
@@ -229,8 +242,13 @@ const generateConfirmedShifts = (year: number, month: number, staffId: string): 
       const rand = seedRandom(staffIdNum * day + year * 50);
       
       if (day >= 25) {
-        // 25日以降は現場未確定
-        status = '現場未確定';
+        // 25日以降は現場未確定または調整中
+        // 緑背景になる条件（day % 4 === 0 || day === 25）でない場合は調整中
+        if (day >= 15 && (day % 4 === 0 || day === 18 || day === 25)) {
+          status = '現場未確定'; // 緑背景
+        } else {
+          status = '-'; // 調整中（白背景）
+        }
       } else if (day >= 20) {
         // 20-24日は詳細未確定（勤務地あり、詳細なし）
         location = LOCATIONS[Math.floor(seedRandom(staffIdNum * day * 2 + year * 70) * LOCATIONS.length)];
@@ -251,6 +269,17 @@ const generateConfirmedShifts = (year: number, month: number, staffId: string): 
         } else {
           status = '詳細未確定';
         }
+      }
+    } else if (requestedStatus === '△') {
+      // △（条件付き希望）→ 調整中または現場未確定
+      const rand = seedRandom(staffIdNum * day + year * 60);
+      
+      if (rand < 0.5) {
+        // 50%で調整中（「-」ステータス）
+        status = '-';
+      } else {
+        // 50%で現場未確定
+        status = '現場未確定';
       }
     }
     
@@ -387,7 +416,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: 'success' | 'warning
   '確定': { label: '確定', color: 'success', icon: <WorkOutline /> },
   '現場未確定': { label: '現場未定', color: 'warning', icon: <LocationOn /> },
   '詳細未確定': { label: '詳細未定', color: 'info', icon: <Schedule /> },
-  '休み': { label: '休み', color: 'error', icon: <Cancel /> }
+  '休み': { label: '休み', color: 'error', icon: <Cancel /> },
+  '-': { label: '調整中', color: 'default', icon: <HelpOutline /> }
 };
 
 export default function StaffCheckPage() {
@@ -591,7 +621,7 @@ export default function StaffCheckPage() {
                   mb: 1, 
                   borderRadius: 2,
                   backgroundColor: shift ? getBackgroundColor(shift.status, data.day) : getBackgroundColor('休み', data.day),
-                  border: shift?.status === '確定' ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                  border: shift ? getBorderStyle(shift.status, data.day) : '1px solid #e0e0e0',
                   cursor: shift?.status === '確定' ? 'pointer' : 'default',
                   transition: 'all 0.2s ease',
                   '&:hover': shift?.status === '確定' ? {
@@ -658,7 +688,7 @@ export default function StaffCheckPage() {
                         <Chip
                           label={STATUS_CONFIG[shift.status].label}
                           variant="outlined"
-                          color={shift.status === '現場未確定' ? undefined : STATUS_CONFIG[shift.status].color}
+                          color={shift.status === '現場未確定' || shift.status === '-' ? undefined : STATUS_CONFIG[shift.status].color}
                           size="small"
                           sx={{ 
                             fontSize: '0.6rem',
@@ -669,6 +699,10 @@ export default function StaffCheckPage() {
                             ...(shift.status === '現場未確定' && {
                               borderColor: '#C3AF45',
                               color: '#C3AF45'
+                            }),
+                            ...(shift.status === '-' && {
+                              borderColor: '#9e9e9e',
+                              color: '#9e9e9e'
                             })
                           }}
                         />
@@ -756,7 +790,7 @@ export default function StaffCheckPage() {
                 }}
               />
               <Typography variant="body2" sx={{ fontSize: '0.82rem', color: 'text.secondary', mt: 0.2 }}>
-                現場と詳細がすべて確定している状態です。
+                勤務先と詳細がすべて確定しています。
               </Typography>
             </Box>
             {/* 詳細未確定 */}
@@ -776,7 +810,7 @@ export default function StaffCheckPage() {
                 }}
               />
               <Typography variant="body2" sx={{ fontSize: '0.82rem', color: 'text.secondary', mt: 0.2 }}>
-                現場は決まっていますが、集合時間や持ち物など詳細が未定の状態です。
+                勤務先は決まっていますが、勤務詳細が決まっていない状態です。
               </Typography>
             </Box>
             {/* 現場未確定 */}
@@ -797,7 +831,32 @@ export default function StaffCheckPage() {
                 }}
               />
               <Typography variant="body2" sx={{ fontSize: '0.82rem', color: 'text.secondary', mt: 0.2 }}>
-                現場が未定の状態です。
+                勤務先が未定の状態です。
+              </Typography>
+            </Box>
+            {/* 調整中 */}
+            <Box sx={{ textAlign: 'left', mb: 1 }}>
+              <Chip
+                label={STATUS_CONFIG['-'].label}
+                variant="outlined"
+                size="small"
+                sx={{ 
+                  fontSize: '0.7rem', 
+                  height: 24, 
+                  fontWeight: 'bold',
+                  borderWidth: 2,
+                  '& .MuiChip-label': { px: 0.4 },
+                  borderColor: '#9e9e9e',
+                  color: '#9e9e9e',
+                  mb: 0.5
+                }}
+              />
+              <Typography variant="body2" sx={{ fontSize: '0.82rem', color: 'text.secondary', mt: 0.2 }}>
+                案件の調整中です。
+                <br />
+                当日に調整中の場合は基本的にお休みとなります。
+                <br />
+                ※急な欠勤等が発生した場合は、お声かけさせていただく可能性があります。
               </Typography>
             </Box>
             {/* 休み */}
