@@ -18,7 +18,7 @@ import StatusCell from './components/StatusCell';
 import CommentCell from './components/CommentCell';
 
 /* ===== 定数 ===== */
-const H_HEADER = 32; const H_ROW = 36;
+const H_HEADER = 24; const H_ROW = 24; // ヘッダーと行の高さをさらに小さく（約6.4mm）
 const TOP = { 
   company: H_HEADER, // 所属会社行の位置
   name: H_HEADER+H_ROW, // 氏名行の位置を下にずらす
@@ -27,17 +27,17 @@ const TOP = {
 };
 // 列の幅を調整して新しい列を追加 - レスポンシブ対応
 const W   = { 
-  date: 70, 
-  closerCase: 80, // 幅を縮小
-  girlCase: 80,   // 幅を縮小
-  closerAvailable: 80, // 幅を縮小
-  girlAvailable: 80,   // 幅を縮小
-  close: 80, // 幅を縮小
-  girl: 80,  // 幅を縮小
-  location: 101, // 稼働場所の幅
+  date: 50, // 日付列の幅を縮小
+  closerCase: 60, // 幅をさらに縮小
+  girlCase: 60,   // 幅をさらに縮小
+  closerAvailable: 60, // 幅をさらに縮小
+  girlAvailable: 60,   // 幅をさらに縮小
+  close: 60, // 幅をさらに縮小
+  girl: 60,  // 幅をさらに縮小
+  location: 80, // 稼働場所の幅を縮小
   
   // 折りたたみ時の幅
-  closerSection: 320, // クローザーセクション全体（折りたたみ時）を縮小
+  closerSection: 240, // クローザーセクション全体（折りたたみ時）をさらに縮小
 };
 
 // border幅を考慮した正確な位置計算
@@ -62,12 +62,12 @@ const LEFT = {
 
 /* ===== 汎用セル ===== */
 const Cell = styled(TableCell)(({ theme }) => ({
-  padding: theme.spacing(0.5),
+  padding: theme.spacing(0.2), // パディングもさらに縮小
   textAlign: 'center',
-  fontSize: 14,
+  fontSize: 10, // デフォルトの文字サイズを小さく
   fontWeight: 600,
   whiteSpace: 'nowrap',
-  height: H_ROW,
+  height: 24, // 行の高さをさらに小さく（約6.4mm）
   lineHeight: 1,
   borderRight: '1px solid #000000',
   minWidth: 'auto',
@@ -79,21 +79,21 @@ const Cell = styled(TableCell)(({ theme }) => ({
   '&.location': { width: W.location, minWidth: W.location, maxWidth: W.location }, // 稼働場所セルの幅を固定
   // レスポンシブ対応
   [theme.breakpoints.down('lg')]: {
-    fontSize: 11,
-    padding: theme.spacing(0.3),
-    height: 30,
+    fontSize: 9,
+    padding: theme.spacing(0.1),
+    height: 20, // さらに縮小（約5.3mm）
     minWidth: 'auto'
   },
   [theme.breakpoints.down('md')]: {
-    fontSize: 10,
-    padding: theme.spacing(0.2),
-    height: 28,
+    fontSize: 8,
+    padding: theme.spacing(0.05),
+    height: 18, // さらに縮小（約4.8mm）
     minWidth: 'auto'
   },
   [theme.breakpoints.down('sm')]: {
-    fontSize: 9,
-    padding: theme.spacing(0.1),
-    height: 26,
+    fontSize: 7,
+    padding: theme.spacing(0.02),
+    height: 16, // さらに縮小（約4.3mm）
     minWidth: 'auto'
   }
 }));
@@ -107,6 +107,7 @@ const CloserSectionHead = styled(Cell)(({ theme }) => ({
   background: '#e3f2fd',
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.closerSection,
   fontWeight: 700,
   fontSize: 16,
@@ -123,6 +124,7 @@ const CloseHeadCollapsed = styled(Cell)(({ theme }) => ({
   background: '#fffde7',
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.close,
   fontWeight: 700,
   borderBottom: '2px solid #000000',
@@ -136,6 +138,7 @@ const GirlHeadCollapsed = styled(Cell)(({ theme }) => ({
   background: '#fffde7',
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.girl,
   fontWeight: 700,
   borderBottom: '2px solid #000000',
@@ -150,6 +153,7 @@ const CloserSectionTop = styled(Cell)<{top:number}>(({top}) => ({
   background: '#e3f2fd',
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.closerSection,
 }));
 
@@ -160,6 +164,7 @@ const CloseCellFixCollapsed = styled(Cell)(({ theme }) => ({
   background: '#fffde7',
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.close,
 }));
 
@@ -170,6 +175,7 @@ const GirlCellFixCollapsed = styled(Cell)(({ theme }) => ({
   background: '#fffde7', // 未決C列と同じ色に戻す
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.girl,
 }));
 
@@ -181,6 +187,7 @@ const CloseTopCollapsed = styled(Cell)<{top:number}>(({top}) => ({
   background: '#fffde7',
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.close,
 }));
 
@@ -192,6 +199,7 @@ const GirlTopCollapsed = styled(Cell)<{top:number}>(({top}) => ({
   background: '#fffde7',
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.girl,
 }));
 
@@ -207,6 +215,7 @@ const CloserSectionBottom = styled(Cell)(({ theme }) => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.closerSection,
 }));
 
@@ -221,6 +230,7 @@ const CloseBottomCollapsed = styled(Cell)(({ theme }) => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.close,
 }));
 
@@ -235,6 +245,7 @@ const GirlBottomCollapsed = styled(Cell)(({ theme }) => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   width: W.girl,
 }));
 
@@ -250,6 +261,7 @@ const DateHead = styled(Cell)(({ theme }) => ({
   maxWidth: 'none',
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   // レスポンシブ対応
   [theme.breakpoints.down('lg')]: {
     fontSize: 11,
@@ -282,6 +294,7 @@ const DateTop = styled(Cell)<{top:number}>(({top, theme}) => ({
   maxWidth: W.date,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   // モバイル対応
   [theme.breakpoints.down('md')]: {
     fontSize: 12,
@@ -303,6 +316,7 @@ const DateCellFix = styled(Cell)(({ theme }) => ({
   maxWidth: W.date,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   // モバイル対応
   [theme.breakpoints.down('md')]: {
     fontSize: 12,
@@ -326,6 +340,7 @@ const CloserCaseHead = styled(Cell)(() => ({
   maxWidth: W.closerCase,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
   cursor: 'move',
   '&.dragging': { 
     opacity: 0.8,
@@ -375,6 +390,7 @@ const GirlCaseHead = styled(Cell)(() => ({
   width: W.girlCase,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
   cursor: 'move',
   '&.dragging': { 
@@ -399,6 +415,7 @@ const GirlCaseTop = styled(Cell)<{top:number}>(({top}) => ({
   width: W.girlCase,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -410,6 +427,7 @@ const GirlCaseCellFix = styled(Cell)(() => ({
   width: W.girlCase,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -423,6 +441,7 @@ const CloserAvailableHead = styled(Cell)(() => ({
   width: W.closerAvailable,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
   cursor: 'move',
   '&.dragging': { 
@@ -447,6 +466,7 @@ const CloserAvailableTop = styled(Cell)<{top:number}>(({top}) => ({
   width: W.closerAvailable,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -458,6 +478,7 @@ const CloserAvailableCellFix = styled(Cell)(() => ({
   width: W.closerAvailable,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -471,6 +492,7 @@ const GirlAvailableHead = styled(Cell)(() => ({
   width: W.girlAvailable,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
   cursor: 'move',
   '&.dragging': { 
@@ -495,6 +517,7 @@ const GirlAvailableTop = styled(Cell)<{top:number}>(({top}) => ({
   width: W.girlAvailable,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -506,6 +529,7 @@ const GirlAvailableCellFix = styled(Cell)(() => ({
   width: W.girlAvailable,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -518,6 +542,7 @@ const CloseHead = styled(Cell)(() => ({
   width: W.close,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -530,6 +555,7 @@ const CloseTop = styled(Cell)<{top:number}>(({top}) => ({
   width: W.close,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -541,6 +567,7 @@ const CloseCellFix = styled(Cell)(() => ({
   width: W.close,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -554,6 +581,7 @@ const GirlHead = styled(Cell)(() => ({
   width: W.girl,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -566,6 +594,7 @@ const GirlTop = styled(Cell)<{top:number}>(({top}) => ({
   width: W.girl,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -577,6 +606,7 @@ const GirlCellFix = styled(Cell)(() => ({
   width: W.girl,
   boxShadow: 'inset 0 -1px 0 #000000',
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -594,7 +624,7 @@ const DateBottom = styled(Cell)(() => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
-
+  fontSize: '14px',
 }));
 
 // 底部固定セル
@@ -610,7 +640,8 @@ const CloserCaseBottom = styled(Cell)(() => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
-
+  fontSize: '14px',
+  fontSize: '14px',
 }));
 
 const GirlCaseBottom = styled(Cell)(() => ({
@@ -625,6 +656,7 @@ const GirlCaseBottom = styled(Cell)(() => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -641,6 +673,7 @@ const CloserAvailableBottom = styled(Cell)(() => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -656,6 +689,7 @@ const GirlAvailableBottom = styled(Cell)(() => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -671,6 +705,7 @@ const CloseBottom = styled(Cell)(() => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -686,6 +721,7 @@ const GirlBottom = styled(Cell)(() => ({
   color: '#e91e63',
   fontWeight: 700,
   borderRight: '2px solid #000000',
+  fontSize: '14px',
 
 }));
 
@@ -729,13 +765,19 @@ const StaffHeadSticky = styled(Cell)(({ theme }) => ({
 
 /* ===== ラッパ ===== */
 const Scroll = styled(Box)(({ theme }) => ({ 
-  height:'calc(100vh - 200px)', 
   overflow:'auto',
-  width: '100%',
+  // テーブル全体の縮尺を積極的に調整して画面いっぱいに表示
+  transform: 'scale(0.7)',
+  transformOrigin: 'top left',
+  // 縮尺に合わせてコンテナサイズを調整し、画面全体に拡張
+  width: '142.9%', // 1/0.7 ≈ 1.429 - コンテナ自体の幅を拡張
+  height: 'calc(142.9vh - 86px)', // 高さをさらに拡張（-186px → -86px でさらに100px追加）
   // 共通スタイル - すべてのセル境界線を黒にする
   '& .MuiTableCell-root': {
     borderBottom: '1px solid #000000',
-    borderRight: '1px solid #000000'
+    borderRight: '1px solid #000000',
+    fontSize: '10px !important', // 文字サイズを小さく
+    padding: '2px !important', // パディングを小さく
   },
   // 全ての枠線を黒に統一
   '& .MuiTableCell-root.staff-section': {
@@ -750,9 +792,12 @@ const Scroll = styled(Box)(({ theme }) => ({
   },
   // モバイル対応のレスポンシブスタイル
   [theme.breakpoints.down('lg')]: {
+    transform: 'scale(0.6)', // さらに縮小
+    width: '166.7%', // 1/0.6 ≈ 1.667
+    height: 'calc(166.7vh - 333px)', // 高さも同じ比率で拡張
     '& .MuiTableCell-root': {
-      fontSize: '11px',
-      padding: theme.spacing(0.2),
+      fontSize: '9px !important',
+      padding: '1px !important',
       minWidth: 'auto',
       whiteSpace: 'nowrap'
     },
@@ -762,9 +807,12 @@ const Scroll = styled(Box)(({ theme }) => ({
     }
   },
   [theme.breakpoints.down('md')]: {
+    transform: 'scale(0.5)', // さらに縮小
+    width: '200%', // 1/0.5 = 2.0
+    height: 'calc(200vh - 400px)', // 高さも同じ比率で拡張
     '& .MuiTableCell-root': {
-      fontSize: '10px',
-      padding: theme.spacing(0.15),
+      fontSize: '8px !important',
+      padding: '1px !important',
       minWidth: 'auto',
       whiteSpace: 'nowrap'
     },
@@ -809,6 +857,7 @@ const darkBorderTheme = createTheme({
           borderRight: '1px solid #000000',
           '&.staff-section': {
             borderRight: '2px solid #000000',
+  fontSize: '14px',
           },
           '&.header': {
             borderBottom: '2px solid #000000',
@@ -885,7 +934,8 @@ const BottomCell = styled(Cell)(() => ({
   boxShadow: '0 -2px 4px rgba(0,0,0,.3)',
   borderTop: '2px solid #000000',
   color: '#e91e63',
-  fontWeight: 700
+  fontWeight: 700,
+  fontSize: '14px',
 }));
 
 /* ===== メイン ===== */
@@ -912,14 +962,10 @@ export interface SpreadsheetGridProps {
 export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   year, month, staffMembers, shifts, staffRequests: externalStaffRequests, onRateChange, onStatusChange, onRequestTextChange, onRequestChange, onCommentChange, hideCaseColumns = false, hideCommentRow = false, isReadOnly = false, showSyncStatus = false, onSubmitToAnsteype, disableDoubleClick = false, requestCellReadOnly
 }) => {
-  console.log(`[SpreadsheetGrid] コンポーネント初期化: year=${year}, month=${month}, staffMembers.length=${staffMembers.length}`);
-  console.log(`[SpreadsheetGrid] 受け取ったshifts:`, shifts.length, shifts.slice(0, 5)); // 最初の5件をログ出力
-  
-  // コンポーネントマウント時のログ
-  console.log(`[SpreadsheetGrid] コンポーネントマウント: year=${year}, month=${month}, staffMembers.length=${staffMembers?.length || 0}`);
-  
   // Hydrationエラーを防ぐためのクライアントサイドチェック
   const [isClient, setIsClient] = useState(false);
+  
+
   
   // コメント管理用ステート
   const [staffComments, setStaffComments] = useState<Record<string, string>>({});
@@ -1224,79 +1270,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   [dates, getUnassigned]);
 
   // 要望データの取得・設定
-  useEffect(() => {
-    console.log(`[SpreadsheetGrid] useEffect開始: year=${year}, month=${month}, staffMembers.length=${staffMembers.length}`);
-    console.log(`[SpreadsheetGrid] 外部要望データ:`, externalStaffRequests);
-    
-    // 外部から要望データが渡されている場合はそれを優先
-    if (externalStaffRequests && externalStaffRequests.length > 0) {
-      console.log(`[SpreadsheetGrid] 外部要望データを使用:`, externalStaffRequests);
-      setStaffRequests(externalStaffRequests);
-      return;
-    }
-    
-    // 外部データがない場合は従来通りストアから取得
-    if (typeof window !== 'undefined' && staffMembers.length > 0) {
-      console.log(`[SpreadsheetGrid] ストアから要望データ取得開始`);
-      
-      // グローバルストアから要望データを取得
-      const { useShiftStore } = require('@/stores/shiftStore');
-      const store = useShiftStore.getState();
-      const existingRequests = store.getStaffRequests(year.toString(), month.toString());
-      
-      console.log(`[SpreadsheetGrid] ストアから取得した要望データ:`, existingRequests);
-      
-      if (existingRequests && existingRequests.length > 0) {
-        // ストアにデータがある場合はそれを使用
-        const formattedRequests: StaffRequest[] = existingRequests.map((req: any) => ({
-          id: req.id,
-          totalRequest: req.totalRequest,
-          weekendRequest: req.weekendRequest,
-          company: req.company,
-          requestText: req.requestText
-        }));
-        
-        console.log(`[SpreadsheetGrid] ストアデータを使用:`, formattedRequests);
-        setStaffRequests(formattedRequests);
-      } else {
-        // ストアにデータがない場合はダミーデータを作成
-        console.log(`[SpreadsheetGrid] ストアにデータなし - ダミーデータ作成`);
-        
-        const getDummyRequestText = (index: number) => {
-          const requestTexts = [
-            '平日希望',
-            '土日出勤可能',
-            '夜勤希望',
-            '短時間勤務希望',
-            '連勤可能',
-            '早番希望',
-            '遅番希望',
-            '週末のみ',
-            '平日のみ',
-            '時短勤務',
-            '残業可能',
-            '急な出勤対応可'
-          ];
-          return requestTexts[index % requestTexts.length];
-        };
-        
-        const dummyRequests: StaffRequest[] = staffMembers.map((staff, index) => ({
-          id: staff.id,
-          totalRequest: 20,
-          weekendRequest: 5,
-          company: staff.company || '',
-          requestText: getDummyRequestText(index)
-        }));
-        
-        console.log(`[SpreadsheetGrid] 作成したダミー要望データ:`, dummyRequests);
-        setStaffRequests(dummyRequests);
-        
-        // ストアにも保存
-        store.updateStaffRequests(year.toString(), month.toString(), dummyRequests);
-        console.log(`[SpreadsheetGrid] ダミーデータをストアに保存完了`);
-      }
-    }
-  }, [year, month, staffMembers, externalStaffRequests]); // externalStaffRequestsを依存配列に追加
+
 
   // 稼働要望数の合計
   const totalCloserRequests = useMemo(() => {
@@ -1456,6 +1430,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         width: W.closerSection,
         backgroundColor: lbl === '要望' ? '#f3e5f5' : '#e3f2fd',
         borderRight: '2px solid #000000',
+  fontSize: '14px',
         borderTop: lbl === '要望' ? '2px solid #000000' : undefined,
         color: lbl === '要望' ? '#9c27b0' : undefined,
         position: 'sticky',
@@ -1650,20 +1625,27 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
 
   // フリーテキスト要望変更ハンドラー
   const handleRequestTextChange = (staffId: string, text: string) => {
-    if (isReadOnly) return; // 読み取り専用モードでは変更不可
+    // 要望セルは編集モード制御は外部コールバックの有無で判断する
     
     // 外部コールバックがある場合は、そちらを優先（一時データ管理）
     if (onRequestTextChange) {
       onRequestTextChange(staffId, text);
-      console.log(`[SpreadsheetGrid] 要望テキスト更新（一時データ）: staffId=${staffId}, text=${text}`);
       return;
     }
     
     // 外部コールバックがない場合のみ、直接ストアを更新
+    // 数値の場合はtotalRequestも更新
+    const numValue = parseInt(text);
+    const isValidNumeric = !isNaN(numValue) && numValue > 0;
+    
     // まずローカル状態を更新
     const updatedRequests = staffRequests.map(req => 
       req.id === staffId 
-        ? { ...req, requestText: text }
+        ? { 
+            ...req, 
+            requestText: text,
+            ...(isValidNumeric && { totalRequest: numValue })
+          }
         : req
     );
     
@@ -1676,7 +1658,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       store.updateStaffRequests(year.toString(), month.toString(), updatedRequests);
     }
     
-    console.log(`[SpreadsheetGrid] 要望テキスト更新（直接ストア）: staffId=${staffId}, text=${text}`);
+    console.log(`[SpreadsheetGrid] 要望テキスト更新（直接ストア）: staffId=${staffId}, text=${text}${isValidNumeric ? ` (totalRequest: ${numValue})` : ''}`);
   };
 
   // 前月引継関数は削除
@@ -1698,6 +1680,113 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         return null;
     }
   };
+
+  // スタッフ要望データの管理（古いデータのクリーンアップ含む）
+  useEffect(() => {
+    if (staffMembers && staffMembers.length > 0) {
+      console.log(`[SpreadsheetGrid] スタッフ要望データ初期化開始 (${year}/${month})`);
+      
+      // ストアを取得
+      if (typeof window === 'undefined') return;
+      const { useShiftStore } = require('@/stores/shiftStore');
+      const store = useShiftStore.getState();
+      
+      if (externalStaffRequests && externalStaffRequests.length > 0) {
+        console.log(`[SpreadsheetGrid] 外部要望データを使用:`, externalStaffRequests);
+        
+        // 外部データの古い文字列を数値に変換
+        const cleanedRequests = externalStaffRequests.map((req: any) => {
+          const numValue = parseInt(req.requestText || '');
+          const isValidNumber = !isNaN(numValue) && numValue > 0;
+          
+          if (!isValidNumber) {
+            // 古い文字列データの場合は数値に変換
+            const randomValue = Math.floor(Math.random() * 20) + 5; // 5-24の範囲でランダム
+            console.log(`[SpreadsheetGrid] 古いデータを変換: ${req.id} "${req.requestText}" → ${randomValue}`);
+            return {
+              ...req,
+              requestText: randomValue.toString(),
+              totalRequest: randomValue,
+              weekendRequest: 0
+            };
+          }
+          
+          return {
+            ...req,
+            totalRequest: numValue,
+            weekendRequest: 0
+          };
+        });
+        
+        setStaffRequests(cleanedRequests);
+        
+        // ストアにも保存
+        store.updateStaffRequests(year.toString(), month.toString(), cleanedRequests);
+        console.log(`[SpreadsheetGrid] クリーンアップ済み外部データをストアに保存`);
+      } else {
+        console.log(`[SpreadsheetGrid] ストアから要望データを取得試行`);
+        
+        // ストアから既存データを取得
+        const existingRequests = store.getStaffRequests(year.toString(), month.toString()) || [];
+        console.log(`[SpreadsheetGrid] ストアから取得したデータ:`, existingRequests);
+        
+        if (existingRequests.length > 0) {
+          // 既存データの古い文字列を数値に変換
+                           const cleanedRequests = existingRequests.map((req: any) => {
+                   const numValue = parseInt(req.requestText || '');
+                   const isValidNumber = !isNaN(numValue) && numValue > 0;
+                   
+                   if (!isValidNumber) {
+                     // 古い文字列データの場合は数値に変換
+                     const randomValue = Math.floor(Math.random() * 20) + 5; // 5-24の範囲でランダム
+                     console.log(`[SpreadsheetGrid] 古いデータを変換: ${req.id} "${req.requestText}" → ${randomValue}`);
+                     return {
+                       ...req,
+                       requestText: randomValue.toString(),
+                       totalRequest: randomValue,
+                       weekendRequest: 0
+                     };
+                   }
+            
+            return {
+              ...req,
+              totalRequest: numValue,
+              weekendRequest: 0
+            };
+          });
+          
+          console.log(`[SpreadsheetGrid] クリーンアップ済みストアデータを使用:`, cleanedRequests);
+          setStaffRequests(cleanedRequests);
+          
+          // クリーンアップしたデータをストアに保存
+          store.updateStaffRequests(year.toString(), month.toString(), cleanedRequests);
+        } else {
+          // ストアにデータがない場合はダミーデータを作成
+          console.log(`[SpreadsheetGrid] ストアにデータなし - ダミーデータ作成`);
+          
+                           const getDummyRequestValue = (index: number) => {
+                   // 5から24の範囲でランダムに生成
+                   return Math.floor(Math.random() * 20) + 5;
+                 };
+          
+          const dummyRequests: StaffRequest[] = staffMembers.map((staff, index) => ({
+            id: staff.id,
+            totalRequest: getDummyRequestValue(index),
+            weekendRequest: 0, // 数値のみなので週末要望は使用しない
+            company: staff.company || '',
+            requestText: getDummyRequestValue(index).toString()
+          }));
+          
+          console.log(`[SpreadsheetGrid] 作成したダミー要望データ:`, dummyRequests);
+          setStaffRequests(dummyRequests);
+          
+          // ストアにも保存
+          store.updateStaffRequests(year.toString(), month.toString(), dummyRequests);
+          console.log(`[SpreadsheetGrid] ダミーデータをストアに保存完了`);
+        }
+      }
+    }
+  }, [year, month, staffMembers, externalStaffRequests]);
 
   /* ===== JSX ===== */
   const content = (
@@ -1972,11 +2061,13 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
             {/* 要望行（infoRowExpandedを流用） */}
             {infoRowExpanded('要望', m => {
               const req = staffRequests.find(req => req.id === m.id);
+              
               return (
                 <RequestCell 
                   staffId={m.id}
                   request={req}
-                  isReadOnly={requestCellReadOnly ?? isReadOnly}
+                  isReadOnly={isReadOnly}
+                  requestCellReadOnly={requestCellReadOnly}
                   onRequestTextChange={handleRequestTextChange}
                 />
               );
@@ -1984,7 +2075,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
 
             {/* 稼働数 */}
             <TableRow>
-              <DateCellFix sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}>稼働数</DateCellFix>
+              <DateCellFix sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}>稼働数</DateCellFix>
               {!hideCaseColumns && (isExpanded ? (
                 <>
                   {columnOrder.map(columnId => {
@@ -1992,7 +2083,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       return (
                         <CloserCaseCellFix 
                           key={columnId} 
-                          sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}
+                          sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}
                         >
                           {totalCloserCases}
                         </CloserCaseCellFix>
@@ -2001,7 +2092,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       return (
                         <GirlCaseCellFix 
                           key={columnId} 
-                          sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}
+                          sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}
                         >
                           {totalGirlCases}
                         </GirlCaseCellFix>
@@ -2010,7 +2101,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       return (
                         <CloserAvailableCellFix 
                           key={columnId} 
-                          sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}
+                          sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}
                         >
                           {totalCloserAvailable}
                         </CloserAvailableCellFix>
@@ -2019,7 +2110,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       return (
                         <GirlAvailableCellFix 
                           key={columnId} 
-                          sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}
+                          sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}
                         >
                           {totalGirlAvailable}
                         </GirlAvailableCellFix>
@@ -2027,10 +2118,10 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                     }
                     return null;
                   })}
-                  <CloseCellFix sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}>
+                  <CloseCellFix sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}>
                     {totalUnassignedClosers}件
                   </CloseCellFix>
-                  <GirlCellFix sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}>
+                  <GirlCellFix sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}>
                     {totalUnassignedGirls}件
                   </GirlCellFix>
                 </>
@@ -2041,15 +2132,16 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       width: W.closerSection,
                       background:'#e8eaf6',
                       borderTop:'2px solid #000000',
-                      color:'#3f51b5'
+                      color:'#3f51b5',
+                      fontSize: '14px',
                     }}
                   >
                     {totalCloserCases}
                   </Cell>
-                  <CloseCellFixCollapsed sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}>
+                  <CloseCellFixCollapsed sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}>
                     {totalUnassignedClosers}件
                   </CloseCellFixCollapsed>
-                  <GirlCellFixCollapsed sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5'}}>
+                  <GirlCellFixCollapsed sx={{background:'#e8eaf6',borderTop:'2px solid #000000',color:'#3f51b5', fontSize: '14px',}}>
                     {totalUnassignedGirls}件
                   </GirlCellFixCollapsed>
                 </>
@@ -2063,7 +2155,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                     background:'#e8eaf6',
                     borderTop:'2px solid #000000',
                     color:'#3f51b5',
-                    fontWeight:700
+                    fontWeight:700,
+                    fontSize: '14px',
                   }}
                 >
                   {staffTotals[s.id]?.count || 0}
@@ -2124,11 +2217,11 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                   </GirlBottomCollapsed>
                 </>
               ))}
-              {orderedStaffMembers.map(s => (
-                <BottomCell key={s.id} colSpan={3} className="staff-section">
-                  ¥{staffTotals[s.id]?.amount.toLocaleString() || '0'}
-                </BottomCell>
-              ))}
+                              {orderedStaffMembers.map(s => (
+                 <BottomCell key={s.id} colSpan={3} className="staff-section">
+                   ¥{staffTotals[s.id]?.amount.toLocaleString() || '0'}
+                 </BottomCell>
+                ))}
             </TableRow>
 
             {/* ===== コメント行 ===== */}
