@@ -110,7 +110,6 @@ const CloserSectionHead = styled(Cell)(({ theme }) => ({
   fontSize: '14px',
   width: W.closerSection,
   fontWeight: 700,
-  fontSize: 16,
   height: H_HEADER,
   borderBottom: '2px solid #000000',
 }));
@@ -641,7 +640,6 @@ const CloserCaseBottom = styled(Cell)(() => ({
   fontWeight: 700,
   borderRight: '2px solid #000000',
   fontSize: '14px',
-  fontSize: '14px',
 }));
 
 const GirlCaseBottom = styled(Cell)(() => ({
@@ -657,7 +655,6 @@ const GirlCaseBottom = styled(Cell)(() => ({
   fontWeight: 700,
   borderRight: '2px solid #000000',
   fontSize: '14px',
-
 }));
 
 // 新規：稼働可能数用の底部固定セル
@@ -674,7 +671,6 @@ const CloserAvailableBottom = styled(Cell)(() => ({
   fontWeight: 700,
   borderRight: '2px solid #000000',
   fontSize: '14px',
-
 }));
 
 const GirlAvailableBottom = styled(Cell)(() => ({
@@ -690,7 +686,6 @@ const GirlAvailableBottom = styled(Cell)(() => ({
   fontWeight: 700,
   borderRight: '2px solid #000000',
   fontSize: '14px',
-
 }));
 
 const CloseBottom = styled(Cell)(() => ({
@@ -706,7 +701,6 @@ const CloseBottom = styled(Cell)(() => ({
   fontWeight: 700,
   borderRight: '2px solid #000000',
   fontSize: '14px',
-
 }));
 
 const GirlBottom = styled(Cell)(() => ({
@@ -722,7 +716,6 @@ const GirlBottom = styled(Cell)(() => ({
   fontWeight: 700,
   borderRight: '2px solid #000000',
   fontSize: '14px',
-
 }));
 
 /* ===== スタッフヘッダー (青) ===== */
