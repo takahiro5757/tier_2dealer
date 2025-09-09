@@ -18,6 +18,35 @@ import AdminHeader from '../../../../components/AdminHeader';
 import { initialStaffMembers } from '@/app/tier-2dealer/admin/staff/initialStaffMembers';
 import { StaffMember } from '../../../../types/staff';
 
+// 依頼ID生成関数
+const generateRequestId = () => {
+  const companyName = 'FESTAL'; // 会社名（設定ファイルから取得することも可能）
+  const now = new Date();
+  
+  // YYYYMMDD形式
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const dateStr = `${year}${month}${day}`;
+  
+  // HHMMSS形式
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const timeStr = `${hours}${minutes}${seconds}`;
+  
+  return `${companyName}-${dateStr}-${timeStr}`;
+};
+
+// コメント履歴の型定義
+interface CommentHistory {
+  id: string;
+  timestamp: string; // ISO文字列
+  author: string; // 承認者名
+  comment: string;
+  action?: 'approved' | 'rejected' | 'partial' | 'note'; // アクション種別
+}
+
 // 変更依頼履歴の型定義
 interface ChangeRequestHistory {
   id: string;
@@ -29,19 +58,46 @@ interface ChangeRequestHistory {
     staffName: string;
     changes: Array<{
       date: string;
-      field: 'status' | 'requestText' | 'totalRequest' | 'weekendRequest';
+      field: 'status' | 'request';
       oldValue: string;
       newValue: string;
     }>;
+    status: 'pending' | 'approved' | 'rejected'; // スタッフ単位のステータス
+    approverComment?: string; // 承認者コメント（スタッフ単位）
+    approvedAt?: string; // 承認・却下日時（ISO文字列）
   }>;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'answered'; // 2次店用：承認待ち・回答済み
   totalChanges: number;
   reason?: string; // 変更理由
-  approverComment?: string; // 承認者コメント
+  approverComment?: string; // 承認者コメント（後方互換性のため残存）
+  commentHistory?: CommentHistory[]; // コメント履歴
+  approvedCount?: number; // 承認済みスタッフ数
+  rejectedCount?: number; // 却下済みスタッフ数
+  pendingCount?: number; // 承認待ちスタッフ数
 }
 
 // 2次店スタッフのダミーデータ（admin/staff/page.tsxと同期）
 const dummyStaffMembers = initialStaffMembers;
+
+// 全体ステータス自動計算関数（2次店用：2つのステータスのみ）
+const calculateOverallStatus = (staffChanges: ChangeRequestHistory['staffChanges']): string => {
+  const pending = staffChanges.filter(s => s.status === 'pending').length;
+  
+  // 一つでも承認待ちがあれば「承認待ち」
+  if (pending > 0) return 'pending';
+  
+  // 全て承認または却下されていれば「回答済み」
+  return 'answered';
+};
+
+// ステータス表示ラベル関数（2次店用：2つのステータスのみ）
+const getStatusLabel = (status: string): string => {
+  switch (status) {
+    case 'pending': return '承認待ち';
+    case 'answered': return '回答済み';
+    default: return status;
+  }
+};
 
 const SUBMISSION_STATUS: Record<string, { label: string; color: 'success' | 'warning' | 'error' | 'default' }> = {
   submitted: { label: '提出済み', color: 'success' },
@@ -186,6 +242,10 @@ const generateDummyShifts = (year: number, month: number): Shift[] => {
             }
           } else {
             status = day <= 25 ? '×' : '△';
+          }
+          // 詳細デバッグ: 最初のスタッフの全日程を確認
+          if (staffIndex === 0) {
+            console.log(`[6月デバッグ] ${staff.name} 6/${day}: status=${status}, submissionStatus=${submissionStatus}`);
           }
         } else {
           // ガールとクローザーで出勤確率を変える
@@ -499,6 +559,15 @@ export default function AdminShiftsPage() {
   
   useEffect(() => { setIsMounted(true); }, []);
 
+  // tempRequestsの変更をトラッキング
+  useEffect(() => {
+    console.log('[TempRequests] 更新:', {
+      length: tempRequests.length,
+      isInEditMode,
+      tempRequests: tempRequests.slice(0, 3)
+    });
+  }, [tempRequests, isInEditMode]);
+
   // 即座にダミーデータを初期化（2025年6月の場合）
   useEffect(() => {
     console.log(`[AdminShifts] 即座初期化useEffect実行チェック: window=${typeof window !== 'undefined'}, year=${currentYear}, month=${currentMonth}`);
@@ -512,6 +581,14 @@ export default function AdminShiftsPage() {
         const { useShiftStore } = require('../../../../stores/shiftStore');
         const store = useShiftStore.getState();
         
+        // 既存の要望データが古い形式の場合は再生成
+        const existingRequests = store.getStaffRequests(currentYear, currentMonth) || [];
+        const hasOldFormat = existingRequests.some((req: any) => req.requestText !== undefined || req.request === undefined);
+        
+        if (hasOldFormat || existingRequests.length === 0) {
+          console.log(`[AdminShifts] 要望データを新形式で再生成します`);
+        }
+        
         // シフトデータを生成
         const shifts = generateDummyShifts(parseInt(currentYear), parseInt(currentMonth));
         console.log(`[AdminShifts] 即座シフトデータ生成: ${shifts.length}件`);
@@ -519,20 +596,19 @@ export default function AdminShiftsPage() {
         // シフトデータをストアに保存
         store.updateShifts(currentYear, currentMonth, shifts);
         
-        // 要望データを生成
+        // 要望データを生成（古い形式の場合または存在しない場合のみ）
+        if (hasOldFormat || existingRequests.length === 0) {
         const requests = dummyStaffMembers.map((staff, index) => ({
           id: staff.id,
-          totalRequest: 20,
-          weekendRequest: 5,
-          company: staff.company || '',
-          requestText: [
-            '平日希望', '土日出勤可能', '夜勤希望', '短時間勤務希望',
-            '連勤可能', '早番希望', '遅番希望', '週末のみ'
-          ][index % 8]
+            request: [15, 18, 12, 20, 16, 14, 22, 10][index % 8], // 要望数（整数）
+            company: staff.company || ''
         }));
         
         store.updateStaffRequests(currentYear, currentMonth, requests);
-        console.log(`[AdminShifts] 即座初期化完了 - シフト: ${shifts.length}件, 要望: ${requests.length}件`);
+          console.log(`[AdminShifts] 要望データを新形式で再生成完了: ${requests.length}件`);
+        }
+        
+        console.log(`[AdminShifts] 即座初期化完了 - シフト: ${shifts.length}件`);
         
         // 初期化完了フラグを設定
         setIsDataInitialized(true);
@@ -630,7 +706,7 @@ export default function AdminShiftsPage() {
       // 要望データの内容確認
       if (savedRequests && savedRequests.length > 0) {
         savedRequests.forEach((req: any) => {
-          console.log(`[AdminShifts] 要望確認 - ${req.id}: 平日=${req.totalRequest}, 土日=${req.weekendRequest}, テキスト="${req.requestText}"`);
+                  console.log(`[AdminShifts] 要望確認 - ${req.id}: 要望=${req.request}`);  
         });
       } else {
         console.error(`[AdminShifts] 要望データが保存されていません！`);
@@ -730,6 +806,21 @@ export default function AdminShiftsPage() {
       // ダミー提出処理
       await new Promise(resolve => setTimeout(resolve, 2000));
       setIsSubmitted(true);
+      
+      // ANSTEYPEへの一括提出通知を送信
+      const { addNotification } = useShiftStore.getState();
+      const staffCount = submissionStats.submitted.length;
+      addNotification({
+        type: 'shift_bulk_submission',
+        title: 'Festal シフト一括提出',
+        message: `Festalから${currentYear}年${currentMonth}月のシフトが一括提出されました（${staffCount}名分）`,
+        isRead: false,
+        staffId: 'festal_admin',
+        staffName: 'Festal管理者',
+        companyName: 'Festal',
+        targetAudience: 'ansteype' // ANSTEYPE管理者向け
+      });
+      
       setMessage('ANSTEYPEに全スタッフのシフトを提出しました');
       setSubmitDialog(false);
       setTimeout(() => setMessage(''), 3000);
@@ -847,10 +938,10 @@ export default function AdminShiftsPage() {
       });
       
       // 変更依頼履歴を作成してローカルストレージに保存
-      const changeRequestId = `cr-${currentYear}${currentMonth.padStart(2, '0')}-${Date.now()}`;
+      const changeRequestId = generateRequestId();
       const totalChanges = changedStaffs.reduce((sum, staff) => sum + staff.changes.length, 0);
       
-                             // 要望データの変更も含める（要望テキスト）
+                             // 要望データの変更も含める（要望）
       const originalRequests = backupRequests;
       tempRequests.forEach(tempRequest => {
         const originalRequest = originalRequests.find(r => r.id === tempRequest.id);
@@ -859,14 +950,15 @@ export default function AdminShiftsPage() {
         
         const requestChanges: any[] = [];
         
-        // 要望テキストの変更
-        const originalRequestText = originalRequest?.requestText || '';
-        if (originalRequestText !== tempRequest.requestText) {
+        // 要望の変更
+        const originalRequestValue = originalRequest?.request || 0;
+        const tempRequestValue = tempRequest.request || 0;
+        if (originalRequestValue !== tempRequestValue) {
           requestChanges.push({
             date: '',
-            field: 'requestText' as const,
-            oldValue: originalRequestText,
-            newValue: tempRequest.requestText
+            field: 'request' as const,
+            oldValue: originalRequestValue.toString(),
+            newValue: tempRequestValue.toString()
           });
         }
         
@@ -902,11 +994,17 @@ export default function AdminShiftsPage() {
             field: change.field || 'status',
             oldValue: change.oldStatus || change.oldValue || '',
             newValue: change.newStatus || change.newValue || ''
-          }))
+          })),
+          status: 'pending' as const, // スタッフ単位のステータス（初期値：承認待ち）
+          approverComment: undefined,
+          approvedAt: undefined
         })),
-        status: 'pending',
+        status: 'pending', // 初期状態は全て pending
         totalChanges: changedStaffs.reduce((sum, staff) => sum + staff.changes.length, 0),
-        reason: changeReason || undefined // 変更理由を追加
+        reason: changeReason || undefined, // 変更理由を追加
+        approvedCount: 0,
+        rejectedCount: 0,
+        pendingCount: changedStaffs.length
       };
       
       // ローカルストレージに保存
@@ -1027,7 +1125,7 @@ export default function AdminShiftsPage() {
     });
   };
   
-  const handleRequestTextChange = (staffId: string, text: string) => {
+  const handleRequestChange = (staffId: string, value: number) => {
     if (!isSubmitted) {
       // 提出前：直接ストアを更新
       const { useShiftStore } = require('../../../../stores/shiftStore');
@@ -1037,23 +1135,16 @@ export default function AdminShiftsPage() {
       const updatedRequests = [...currentRequests];
       const existingIndex = updatedRequests.findIndex(r => r.id === staffId);
       
-      // 数値の場合はtotalRequestも更新
-      const numValue = parseInt(text);
-      const isNumeric = !isNaN(numValue) && numValue > 0;
-      
       if (existingIndex >= 0) {
         updatedRequests[existingIndex] = { 
           ...updatedRequests[existingIndex], 
-          requestText: text,
-          ...(isNumeric && { totalRequest: numValue })
+          request: value
         };
       } else {
         updatedRequests.push({
           id: staffId,
-          totalRequest: isNumeric ? numValue : 15,
-          weekendRequest: 0,
-          company: '',
-          requestText: text
+          request: value,
+          company: ''
         });
       }
       
@@ -1062,7 +1153,7 @@ export default function AdminShiftsPage() {
       // 強制的に再レンダリングを発生させるため、isDataInitializedを切り替え
       setIsDataInitialized(prev => !prev);
       
-      console.log(`[DirectEdit] 要望テキスト更新: ${staffId} → ${text}${isNumeric ? ` (totalRequest: ${numValue})` : ''}`);
+      console.log(`[DirectEdit] 要望更新: ${staffId} → ${value}`);
       return;
     }
     
@@ -1073,85 +1164,38 @@ export default function AdminShiftsPage() {
       const updatedRequests = [...prevRequests];
       const existingIndex = updatedRequests.findIndex(r => r.id === staffId);
       
-      // 数値の場合はtotalRequestも更新
-      const numValue = parseInt(text);
-      const isNumeric = !isNaN(numValue) && numValue > 0;
-      
       if (existingIndex >= 0) {
         updatedRequests[existingIndex] = { 
           ...updatedRequests[existingIndex], 
-          requestText: text,
-          ...(isNumeric && { totalRequest: numValue })
+          request: value
         };
       } else {
         updatedRequests.push({
           id: staffId,
-          totalRequest: isNumeric ? numValue : 15,
-          weekendRequest: 0,
-          company: '',
-          requestText: text
+          request: value,
+          company: ''
         });
       }
       
-      console.log(`[TempData] 要望テキスト更新: ${staffId} → ${text}${isNumeric ? ` (totalRequest: ${numValue})` : ''}`);
+      console.log(`[TempData] 要望更新: ${staffId} → ${value}`);
       return updatedRequests;
     });
   };
 
-  const handleRequestChange = (staffId: string, field: 'totalRequest' | 'weekendRequest', value: number) => {
-    if (!isSubmitted) {
-      // 提出前：直接ストアを更新
-      const { useShiftStore } = require('../../../../stores/shiftStore');
-      const store = useShiftStore.getState();
-      const currentRequests = store.getStaffRequests(currentYear, currentMonth) || [];
-      
-      const updatedRequests = [...currentRequests];
-      const existingIndex = updatedRequests.findIndex(r => r.id === staffId);
-      
-      if (existingIndex >= 0) {
-        updatedRequests[existingIndex] = { ...updatedRequests[existingIndex], [field]: value };
+  // 要望セル（テキスト形式）の変更ハンドラー - RequestCellとの橋渡し
+  const handleRequestTextChange = (staffId: string, text: string) => {
+    console.log(`[RequestTextChange] 呼び出し開始: staffId=${staffId}, text="${text}", isSubmitted=${isSubmitted}, isInEditMode=${isInEditMode}`);
+    
+    const numValue = parseInt(text);
+    if (!isNaN(numValue) && numValue > 0) {
+      console.log(`[RequestTextChange] 文字列 "${text}" を数値 ${numValue} に変換して処理`);
+      handleRequestChange(staffId, numValue);
       } else {
-        updatedRequests.push({
-          id: staffId,
-          totalRequest: field === 'totalRequest' ? value : 15,
-          weekendRequest: field === 'weekendRequest' ? value : 0,
-          company: '',
-          requestText: value.toString()
-        });
-      }
-      
-      store.updateStaffRequests(currentYear, currentMonth, updatedRequests);
-      
-      // 強制的に再レンダリングを発生させるため、isDataInitializedを切り替え
-      setIsDataInitialized(prev => !prev);
-      
-      console.log(`[DirectEdit] 要望数更新: ${staffId} ${field} → ${value}`);
-      return;
+      console.warn(`[RequestTextChange] 無効な値: "${text}" (staffId: ${staffId})`);
     }
-    
-    // 提出後：編集モードの場合のみ一時データを更新
-    if (!isInEditMode) return;
-    
-    setTempRequests(prevRequests => {
-      const updatedRequests = [...prevRequests];
-      const existingIndex = updatedRequests.findIndex(r => r.id === staffId);
-      
-      if (existingIndex >= 0) {
-        updatedRequests[existingIndex] = { ...updatedRequests[existingIndex], [field]: value };
-      } else {
-        updatedRequests.push({
-          id: staffId,
-          totalRequest: field === 'totalRequest' ? value : 15,
-          weekendRequest: field === 'weekendRequest' ? value : 0,
-          company: '',
-          requestText: value.toString()
-        });
-      }
-      
-      console.log(`[TempData] 要望数更新: ${staffId} ${field} → ${value}`);
-      return updatedRequests;
-    });
   };
+
+
 
   // コメント変更ハンドラー（常時編集可能・2次店専用）
   const handleCommentChange = (staffId: string, comment: string) => {
@@ -1168,15 +1212,43 @@ export default function AdminShiftsPage() {
     const currentShifts = store.getShifts(currentYear, currentMonth) || [];
     const currentRequests = store.getStaffRequests(currentYear, currentMonth) || [];
     
-    setBackupShifts([...currentShifts]);
+    // 詳細ログでデータ内容を確認
+    console.log('[Backup] バックアップ開始 - 現在のデータ詳細:', {
+      year: currentYear,
+      month: currentMonth,
+      shiftsLength: currentShifts.length,
+      requestsLength: currentRequests.length,
+      shiftsPreview: currentShifts.slice(0, 5).map((s: any) => ({
+        staffId: s.staffId,
+        date: s.date,
+        status: s.status,
+        comment: s.comment?.substring(0, 20) || 'なし'
+      })),
+      requestsPreview: currentRequests.slice(0, 5).map((r: any) => ({
+        id: r.id,
+        request: r.request,
+        requestText: r.requestText,
+        totalRequest: r.totalRequest
+      })),
+      allStoreData: Object.keys(store.getState?.() || {})
+    });
+    
     setBackupRequests([...currentRequests]);
     
     // 編集モード開始：現在のデータを一時データとしてコピー
     setTempShifts([...currentShifts]);
     setTempRequests([...currentRequests]);
+    
+    // 重要：バックアップ用にシフトデータもstateに保存
+    setBackupShifts([...currentShifts]);
     setIsInEditMode(true);
     
-    console.log('[Backup] データをバックアップし、編集モードを開始しました', { shifts: currentShifts.length, requests: currentRequests.length });
+    console.log('[Backup] バックアップ完了', { 
+      backupShiftsLength: currentShifts.length,
+      backupRequestsLength: currentRequests.length,
+      tempShiftsLength: currentShifts.length,
+      tempRequestsLength: currentRequests.length
+    });
   };
 
   const restoreFromBackup = () => {
@@ -1271,7 +1343,7 @@ export default function AdminShiftsPage() {
   const formatDateForDisplay = (dateStr: string) => {
     if (!dateStr) return '-';
     const [year, month, day] = dateStr.split('-');
-    return `${year}年${month}月${day}日`;
+    return `${month}月${day}日`;
   };
 
   // 変更内容を分析する関数
@@ -1300,6 +1372,16 @@ export default function AdminShiftsPage() {
     };
 
     // シフト変更の分析
+    console.log('[analyzeChanges] シフト変更分析開始:', {
+      tempShiftsLength: tempShifts.length,
+      backupShiftsLength: backupShifts.length,
+      backupShiftsPreview: backupShifts.slice(0, 3).map(s => ({ 
+        staffId: s.staffId, 
+        date: s.date, 
+        status: s.status 
+      }))
+    });
+    
     const staffIds = tempShifts.map(s => s.staffId).filter((id, index, array) => array.indexOf(id) === index);
     staffIds.forEach(staffId => {
       const staffMember = staffMembers?.find(s => s.id === staffId);
@@ -1307,6 +1389,13 @@ export default function AdminShiftsPage() {
 
       const originalStaffShifts = backupShifts.filter(s => s.staffId === staffId);
       const tempStaffShifts = tempShifts.filter(s => s.staffId === staffId);
+      
+      console.log(`[analyzeChanges] ${staffMember.name}のシフト変更チェック:`, {
+        originalShiftsCount: originalStaffShifts.length,
+        tempShiftsCount: tempStaffShifts.length,
+        originalPreview: originalStaffShifts.slice(0, 3).map(s => ({ date: s.date, status: s.status })),
+        tempPreview: tempStaffShifts.slice(0, 3).map(s => ({ date: s.date, status: s.status }))
+      });
 
       const shiftChanges: Array<{
         date: string;
@@ -1338,10 +1427,20 @@ export default function AdminShiftsPage() {
     });
 
     // 要望変更の分析
+    console.log('[analyzeChanges] 要望変更分析開始:', { 
+      tempRequestsLength: tempRequests.length, 
+      backupRequestsLength: backupRequests.length 
+    });
+    
     tempRequests.forEach(tempRequest => {
       const originalRequest = backupRequests.find(r => r.id === tempRequest.id);
       const staffMember = staffMembers?.find(s => s.id === tempRequest.id);
       if (!staffMember) return;
+
+      console.log(`[analyzeChanges] スタッフ ${staffMember.name}:`, {
+        originalRequest: originalRequest?.request,
+        tempRequest: tempRequest.request
+      });
 
       const requestChanges: Array<{
         field: string;
@@ -1350,14 +1449,16 @@ export default function AdminShiftsPage() {
         newValue: string;
       }> = [];
 
-      // 要望テキストの変更
-      const originalRequestText = originalRequest?.requestText || '';
-      if (originalRequestText !== tempRequest.requestText) {
+      // 要望の変更
+      const originalRequestValue = originalRequest?.request || 0;
+      const tempRequestValue = tempRequest.request || 0;
+      if (originalRequestValue !== tempRequestValue) {
+        console.log(`[analyzeChanges] 要望変更検出: ${staffMember.name} ${originalRequestValue} → ${tempRequestValue}`);
         requestChanges.push({
-          field: 'requestText',
-          fieldLabel: '要望テキスト',
-          oldValue: originalRequestText || '（なし）',
-          newValue: tempRequest.requestText || '（なし）'
+          field: 'request',
+          fieldLabel: '要望',
+          oldValue: originalRequestValue.toString(),
+          newValue: tempRequestValue.toString()
         });
       }
 
@@ -1432,21 +1533,28 @@ export default function AdminShiftsPage() {
               staffName: '田中太郎',
               changes: [
                 { date: '2025-06-12', field: 'status', oldValue: '○', newValue: '×' },
-                { date: '', field: 'requestText', oldValue: '平日希望', newValue: '夜勤希望' }
-              ]
+                { date: '', field: 'request', oldValue: '15', newValue: '18' }
+              ],
+              status: 'pending',
+              approvedAt: undefined
             },
             {
               staffId: 'staff002',
               staffName: '佐藤花子',
               changes: [
                 { date: '2025-06-15', field: 'status', oldValue: '×', newValue: '○' },
-                { date: '', field: 'requestText', oldValue: '週末のみ', newValue: '連勤可能' }
-              ]
+                { date: '', field: 'request', oldValue: '12', newValue: '20' }
+              ],
+              status: 'pending',
+              approvedAt: undefined
             }
           ],
           status: 'pending',
           totalChanges: 4,
-          reason: '家庭の都合で出勤希望を変更'
+          reason: '家庭の都合で出勤希望を変更',
+          approvedCount: 0,
+          rejectedCount: 0,
+          pendingCount: 2
         },
         {
           id: 'cr-202506-002',
@@ -1459,22 +1567,212 @@ export default function AdminShiftsPage() {
               staffName: '山田次郎',
               changes: [
                 { date: '2025-06-18', field: 'status', oldValue: '○', newValue: '×' },
-                { date: '', field: 'requestText', oldValue: '夜勤希望', newValue: '短時間勤務希望' }
-              ]
+                { date: '', field: 'request', oldValue: '10', newValue: '8' }
+              ],
+              status: 'approved',
+              approvedAt: '2025-06-13T09:30:00.000Z'
             },
             {
               staffId: 'staff004',
               staffName: '鈴木美咲',
               changes: [
                 { date: '2025-06-20', field: 'status', oldValue: '×', newValue: '○' },
-                { date: '', field: 'requestText', oldValue: '短時間勤務希望', newValue: '連勤可能' }
-              ]
-            }
+                { date: '', field: 'request', oldValue: '6', newValue: '14' }
           ],
           status: 'approved',
+              approvedAt: '2025-06-13T09:35:00.000Z'
+            }
+          ],
+          status: 'answered',
           totalChanges: 4,
           reason: 'スタッフの希望反映',
-          approverComment: '要望内容を確認し、全て承認しました。'
+          approverComment: '要望内容を確認し、全て承認しました。',
+          commentHistory: [
+            {
+              id: 'comment-001',
+              timestamp: '2025-06-13T09:00:00.000Z',
+              author: '店長 田中',
+              comment: '変更依頼を受け付けました。内容を確認中です。',
+              action: 'note'
+            },
+            {
+              id: 'comment-002',
+              timestamp: '2025-06-13T09:30:00.000Z',
+              author: '店長 田中',
+              comment: '山田次郎さんの変更内容を確認し、承認いたします。',
+              action: 'approved'
+            },
+            {
+              id: 'comment-003',
+              timestamp: '2025-06-13T09:35:00.000Z',
+              author: '店長 田中',
+              comment: '鈴木美咲さんの変更内容も問題ありません。全て承認完了です。',
+              action: 'approved'
+            }
+          ],
+          approvedCount: 2,
+          rejectedCount: 0,
+          pendingCount: 0
+        },
+        {
+          id: 'cr-202506-175073742819',
+          requestDate: '2025-06-24T03:57:03.000Z',
+          targetYear: 2025,
+          targetMonth: 6,
+          staffChanges: [
+            {
+              staffId: 'staff005',
+              staffName: '山田次郎',
+              changes: [
+                { date: '2025-06-25', field: 'status', oldValue: '○', newValue: '×' }
+              ],
+              status: 'pending',
+              approvedAt: undefined
+            },
+            {
+              staffId: 'staff006',
+              staffName: '鈴木美咲',
+              changes: [
+                { date: '2025-06-26', field: 'status', oldValue: '×', newValue: '○' }
+              ],
+              status: 'pending',
+              approvedAt: undefined
+            }
+          ],
+          status: 'pending',
+          totalChanges: 2,
+          reason: '急な予定変更のため',
+          approvedCount: 0,
+          rejectedCount: 0,
+          pendingCount: 2
+        },
+        {
+          id: 'cr-202506-175073278635',
+          requestDate: '2025-06-24T02:39:46.000Z',
+          targetYear: 2025,
+          targetMonth: 6,
+          staffChanges: [
+            {
+              staffId: 'staff007',
+              staffName: '山田次郎',
+              changes: [
+                { date: '2025-06-27', field: 'status', oldValue: '○', newValue: '×' }
+              ],
+              status: 'approved',
+              approvedAt: '2025-06-24T08:15:00.000Z'
+            },
+            {
+              staffId: 'staff008',
+              staffName: '鈴木美咲',
+              changes: [
+                { date: '2025-06-28', field: 'status', oldValue: '×', newValue: '○' }
+              ],
+              status: 'approved',
+              approvedAt: '2025-06-24T08:20:00.000Z'
+            },
+            {
+              staffId: 'staff009',
+              staffName: '田中花子',
+              changes: [
+                { date: '2025-06-29', field: 'status', oldValue: '○', newValue: '×' }
+              ],
+              status: 'pending',
+              approvedAt: undefined
+            }
+          ],
+          status: 'pending',
+          totalChanges: 3,
+          reason: '家庭の事情と体調不良',
+          approverComment: '2名分の変更を承認しました。残り1名は検討中です。',
+          commentHistory: [
+            {
+              id: 'comment-004',
+              timestamp: '2025-06-24T08:00:00.000Z',
+              author: '店長 田中',
+              comment: '家庭の事情による変更依頼を受け付けました。',
+              action: 'note'
+            },
+            {
+              id: 'comment-005',
+              timestamp: '2025-06-24T08:15:00.000Z',
+              author: '店長 田中',
+              comment: '山田次郎さんの変更内容を承認いたします。',
+              action: 'approved'
+            },
+            {
+              id: 'comment-006',
+              timestamp: '2025-06-24T08:20:00.000Z',
+              author: '店長 田中',
+              comment: '鈴木美咲さんの変更内容も承認いたします。',
+              action: 'approved'
+            },
+            {
+              id: 'comment-007',
+              timestamp: '2025-06-24T08:25:00.000Z',
+              author: '店長 田中',
+              comment: '田中花子さんの変更については、シフト調整の都合により検討中です。',
+              action: 'note'
+            }
+          ],
+          approvedCount: 2,
+          rejectedCount: 0,
+          pendingCount: 1
+        },
+        {
+          id: 'cr-202506-004',
+          requestDate: '2025-06-10T10:00:00.000Z',
+          targetYear: 2025,
+          targetMonth: 6,
+          staffChanges: [
+            {
+              staffId: 'staff010',
+              staffName: '田中太郎',
+              changes: [
+                { date: '2025-06-30', field: 'status', oldValue: '○', newValue: '×' }
+              ],
+              status: 'rejected',
+              approvedAt: '2025-06-11T14:30:00.000Z'
+            },
+            {
+              staffId: 'staff011',
+              staffName: '佐藤花子',
+              changes: [
+                { date: '2025-06-31', field: 'status', oldValue: '×', newValue: '○' }
+              ],
+              status: 'rejected',
+              approvedAt: '2025-06-11T14:35:00.000Z'
+            }
+          ],
+          status: 'answered',
+          totalChanges: 4,
+          reason: '人員調整希望',
+          approverComment: '人員配置の都合により、全ての変更依頼を却下いたします。',
+          commentHistory: [
+            {
+              id: 'comment-008',
+              timestamp: '2025-06-10T10:30:00.000Z',
+              author: '店長 田中',
+              comment: '人員調整に関する変更依頼を受け付けました。',
+              action: 'note'
+            },
+            {
+              id: 'comment-009',
+              timestamp: '2025-06-10T14:00:00.000Z',
+              author: '店長 田中',
+              comment: '本部と相談しましたが、現在の人員配置を変更することは困難です。',
+              action: 'note'
+            },
+            {
+              id: 'comment-010',
+              timestamp: '2025-06-10T16:00:00.000Z',
+              author: '店長 田中',
+              comment: '申し訳ございませんが、全ての変更依頼を却下させていただきます。',
+              action: 'rejected'
+            }
+          ],
+          approvedCount: 0,
+          rejectedCount: 2,
+          pendingCount: 0
         }
       ];
       localStorage.setItem(CHANGE_REQUEST_STORAGE_KEY, JSON.stringify(dummyChangeRequests));
@@ -1482,7 +1780,20 @@ export default function AdminShiftsPage() {
   }, []);
 
   // 変更内容詳細の内容を事前にdetailContentとして定義
+  console.log('[DetailContent] データ状態確認:', {
+    isInEditMode,
+    tempRequestsLength: tempRequests.length,
+    backupRequestsLength: backupRequests.length,
+    tempRequests: tempRequests.slice(0, 3),
+    backupRequests: backupRequests.slice(0, 3)
+  });
   const changes = analyzeChanges();
+  console.log('[DetailContent] analyzeChanges結果:', {
+    totalChanges: changes.totalChanges,
+    shiftChangesLength: changes.shiftChanges.length,
+    requestChangesLength: changes.requestChanges.length,
+    requestChanges: changes.requestChanges
+  });
   const staffMap: Record<string, { staffName: string; shiftChanges: any[]; requestChanges: any[] }> = {};
   changes.shiftChanges.forEach((sc) => {
     staffMap[sc.staffId] = staffMap[sc.staffId] || { staffName: sc.staffName, shiftChanges: [], requestChanges: [] };
@@ -1506,62 +1817,35 @@ export default function AdminShiftsPage() {
         <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
           {staffName}
         </Typography>
+        {/* 変更内容をシンプルに表示 */}
+        <Box sx={{ ml: 2 }}>
         {/* シフト希望の変更 */}
-        {shiftChanges.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}>
-              シフト希望の変更
-            </Typography>
-            <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>日付</TableCell>
-                    <TableCell>変更前</TableCell>
-                    <TableCell>変更後</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
                   {shiftChanges.map((change, changeIndex) => (
-                    <TableRow key={changeIndex}>
-                      <TableCell>{formatDateForDisplay(change.date)}</TableCell>
-                      <TableCell>{change.oldValue}</TableCell>
-                      <TableCell>{change.newValue}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-        )}
-        {/* 要望の変更 */}
-        {requestChanges.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}>
-              要望の変更
+            <Typography 
+              key={`shift-${changeIndex}`} 
+              variant="body2" 
+              sx={{ 
+                mb: 0.5,
+                fontSize: '0.9rem'
+              }}
+            >
+              {formatDateForDisplay(change.date)}: {change.oldValue} → {change.newValue} (シフト希望)
             </Typography>
-            <TableContainer component={Paper} variant="outlined" sx={{ mb: 1 }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>項目</TableCell>
-                    <TableCell>変更前</TableCell>
-                    <TableCell>変更後</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
+          ))}
+        {/* 要望の変更 */}
                   {requestChanges.map((change, changeIndex) => (
-                    <TableRow key={changeIndex}>
-                      <TableCell>{change.fieldLabel}</TableCell>
-                      <TableCell>{change.oldValue}</TableCell>
-                      <TableCell>{change.newValue}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Typography 
+              key={`request-${changeIndex}`} 
+              variant="body2" 
+              sx={{ 
+                mb: 0.5,
+                fontSize: '0.9rem'
+              }}
+            >
+              {change.oldValue} → {change.newValue} (要望)
+            </Typography>
+          ))}
           </Box>
-        )}
       </Box>
     ));
   }
@@ -1729,12 +2013,11 @@ export default function AdminShiftsPage() {
             hideCaseColumns={true}
             isReadOnly={isSubmitted && !isInEditMode} // 提出前は編集可、提出後は編集モード時のみ編集可
               onStatusChange={!isSubmitted || isInEditMode ? handleStatusChange as any : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
-            onRequestTextChange={!isSubmitted || isInEditMode ? handleRequestTextChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
-            onRequestChange={!isSubmitted || isInEditMode ? handleRequestChange : undefined} // 提出前は常に有効、提出後は編集モード時のみ有効
+              onRequestTextChange={!isSubmitted || isInEditMode ? handleRequestTextChange : undefined} // RequestCellとの橋渡し
               onCommentChange={handleCommentChange} // コメントは常時編集可能
             onRateChange={undefined}
             disableDoubleClick={true}
-              requestCellReadOnly={false} // 要望セルは常に編集可能（編集モード時の制御はonRequestTextChangeで行う）
+              requestCellReadOnly={isSubmitted && !isInEditMode} // 提出前は編集可、提出後は編集モード時のみ編集可
           />
           </Paper>
         </Paper>
@@ -1810,7 +2093,7 @@ export default function AdminShiftsPage() {
               対象月: {currentYear}年{currentMonth}月
             </Typography>
             <Typography variant="body2" color="primary.main">
-              総変更件数: {analyzeChanges().totalChanges}件
+              総変更件数: {changes.totalChanges}件
             </Typography>
           </Box>
 
@@ -1843,7 +2126,7 @@ export default function AdminShiftsPage() {
             variant="contained"
             color="primary"
             onClick={handleSubmitChangeRequest}
-            disabled={analyzeChanges().totalChanges === 0}
+            disabled={changes.totalChanges === 0}
           >
             変更内容を提出する
           </Button>

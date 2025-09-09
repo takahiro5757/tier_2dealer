@@ -1651,7 +1651,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       store.updateStaffRequests(year.toString(), month.toString(), updatedRequests);
     }
     
-    console.log(`[SpreadsheetGrid] 要望テキスト更新（直接ストア）: staffId=${staffId}, text=${text}${isValidNumeric ? ` (totalRequest: ${numValue})` : ''}`);
+    console.log(`[SpreadsheetGrid] 要望更新（直接ストア）: staffId=${staffId}, text=${text}${isValidNumeric ? ` (totalRequest: ${numValue})` : ''}`);
   };
 
   // 前月引継関数は削除

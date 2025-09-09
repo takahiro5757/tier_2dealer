@@ -33,7 +33,7 @@ export interface ChangeRequest {
 
 export interface NotificationItem {
   id: string;
-  type: 'shift_submission' | 'change_request' | 'approval' | 'rejection';
+  type: 'shift_bulk_submission' | 'change_request' | 'approval' | 'rejection';
   title: string;
   message: string;
   timestamp: Date;
@@ -196,7 +196,7 @@ export default function NotificationSystem({
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'shift_submission': return <Assignment color="primary" />;
+      case 'shift_bulk_submission': return <Assignment color="primary" />;
       case 'change_request': return <Schedule color="warning" />;
       case 'approval': return <CheckCircle color="success" />;
       case 'rejection': return <Cancel color="error" />;
@@ -206,7 +206,7 @@ export default function NotificationSystem({
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'shift_submission': return 'primary';
+      case 'shift_bulk_submission': return 'primary';
       case 'change_request': return 'warning';
       case 'approval': return 'success';
       case 'rejection': return 'error';
@@ -216,7 +216,7 @@ export default function NotificationSystem({
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'shift_submission': return 'シフト提出';
+      case 'shift_bulk_submission': return 'シフト一括提出';
       case 'change_request': return 'シフト変更依頼';
       case 'approval': return '承認完了';
       case 'rejection': return '却下';

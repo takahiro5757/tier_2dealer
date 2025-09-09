@@ -72,10 +72,11 @@ export interface DateInfo {
 
 export interface StaffRequest {
   id: string;
-  totalRequest: number;
-  weekendRequest: number;
+  totalRequest: number; // 後方互換性のため残存（将来削除予定）
+  weekendRequest: number; // 後方互換性のため残存（将来削除予定）
   company: string;
-  requestText?: string; // フリーテキスト要望
+  requestText?: string; // 後方互換性のため残存（将来削除予定）
+  request?: number; // 要望数（メインフィールド）
 }
 
 export type CellPosition = {

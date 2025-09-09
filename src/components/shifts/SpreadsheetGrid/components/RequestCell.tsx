@@ -48,6 +48,11 @@ const RequestCell: React.FC<RequestCellProps> = ({
   const getDisplayValue = (): string => {
     if (!request) return '15';
     
+    // 新しいrequestフィールドを優先
+    if (request.request && request.request > 0) {
+      return request.request.toString();
+    }
+    
     // 古い文字列データを検出
     const oldTextValues = ['平日希望', '土日出勤可能', '夜勤希望', '短時間勤務希望', '連勤可能', '早番希望', '遅番希望', '週末のみ', '平日のみ', '時短勤務', '残業可能', '急な出勤対応可'];
     if (request.requestText && oldTextValues.includes(request.requestText)) {
@@ -60,7 +65,7 @@ const RequestCell: React.FC<RequestCellProps> = ({
       return '15';
     }
     
-    // 数値の場合
+    // 数値の場合（requestTextから）
     if (request.requestText && /^\d+$/.test(request.requestText)) {
       const num = parseInt(request.requestText);
       if (!isNaN(num) && num > 0) {
@@ -68,7 +73,7 @@ const RequestCell: React.FC<RequestCellProps> = ({
       }
     }
     
-    // totalRequestから取得
+    // totalRequestから取得（後方互換性）
     if (request.totalRequest && request.totalRequest > 0) {
       return request.totalRequest.toString();
     }

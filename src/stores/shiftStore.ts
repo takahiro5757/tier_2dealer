@@ -17,7 +17,7 @@ interface StaffMember {
 // 通知の型定義
 export interface Notification {
   id: string;
-  type: 'change_request' | 'approval' | 'rejection' | 'info';
+  type: 'shift_bulk_submission' | 'change_request' | 'approval' | 'rejection' | 'info';
   title: string;
   message: string;
   isRead: boolean;

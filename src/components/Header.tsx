@@ -31,7 +31,7 @@ export default function Header() {
     setNotifications([
       {
         id: '1',
-        type: 'shift_submission',
+        type: 'shift_bulk_submission',
         title: '2次店からシフト提出',
         message: '2次店（Festal）がANSTEYPE宛てに6月分のシフトを提出しました',
         timestamp: new Date(),
